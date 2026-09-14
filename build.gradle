@@ -21,6 +21,11 @@ dependencies {
     // Used both at quarkusDev runtime and in @QuarkusTest via a QuarkusTestResourceLifecycleManager.
     implementation 'de.flapdoodle.embed:de.flapdoodle.embed.mongo:4.20.0'
 
+    // Approved dependency (AGENTS.md boundary: "Ask first: Adding new dependencies"). Used by the
+    // Group C (Export) XLSX/Office Open XML writer (task C4; design.md section 4 step 3:
+    // "POI-based (or equivalent) writer").
+    implementation 'org.apache.poi:poi-ooxml:5.3.0'
+
     testImplementation 'io.quarkus:quarkus-junit'
     testImplementation 'io.rest-assured:rest-assured'
     testImplementation 'org.assertj:assertj-core:3.26.3'

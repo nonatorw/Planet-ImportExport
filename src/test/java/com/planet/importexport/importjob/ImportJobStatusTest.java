@@ -7,16 +7,18 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 /**
- * Pure unit tests for the {@code import_jobs} status lifecycle (design.md section 1.3, section 3):
- * {@code PENDING -> RUNNING -> COMPLETED/FAILED}. No Quarkus container needed — this is plain
- * enum logic (per {@code @421-frameworks-quarkus-testing-unit-tests}, prefer JUnit 5 alone for
+ * Pure unit tests for the {@code import_jobs} status lifecycle (design.md
+ * section 1.3, section 3):
+ * {@code PENDING -> RUNNING -> COMPLETED/FAILED}. No Quarkus container needed
+ * — this is plain enum logic (per
+ * {@code @421-frameworks-quarkus-testing-unit-tests}, prefer JUnit 5 alone for
  * container-free logic).
  */
 class ImportJobStatusTest {
-
     @ParameterizedTest
     @CsvSource({"PENDING, RUNNING", "RUNNING, COMPLETED", "RUNNING, FAILED"})
-    void allowsDocumentedTransitions(ImportJobStatus from, ImportJobStatus to) {
+    void allowsDocumentedTransitions(ImportJobStatus from,
+                                     ImportJobStatus to) {
         assertTrue(from.canTransitionTo(to));
     }
 
