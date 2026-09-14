@@ -17,7 +17,10 @@ import com.planet.importexport.exportapi.model.ExportColumn;
  */
 public final class ExportColumnValidator {
 
-    /** Not instantiable: all behavior is exposed through {@link #validate(List)}. */
+    /**
+     * Not instantiable: all behavior is exposed through
+     * {@link #validate(List)}.
+     */
     private ExportColumnValidator() {
         // Utility class.
     }

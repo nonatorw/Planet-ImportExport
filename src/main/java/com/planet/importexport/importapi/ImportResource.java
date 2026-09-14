@@ -10,6 +10,7 @@ import com.planet.importexport.importjob.ImportJobDocument;
 import com.planet.importexport.importjob.ImportJobRepository;
 import com.planet.importexport.staging.StagingEntryRepository;
 
+import io.quarkus.security.Authenticated;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
@@ -28,10 +29,17 @@ import jakarta.ws.rs.core.Response;
  * both endpoints under the same {@code /api/v1/imports} path base;
  * {@code tasks.md}, "Execution instructions" explicitly calls for one resource
  * file, not two).
+ *
+ * <p>{@code E1} (ADR-0006): every method requires a valid OIDC bearer token.
+ * The spec ("Requirement: OAuth2 Client Credentials protection on every
+ * endpoint") only mandates "a valid access token", not a specific role or
+ * scope, so {@link Authenticated} is the exact fit — no {@code @RolesAllowed}
+ * role model is defined anywhere in the design artifacts.</p>
  */
 @Path("/api/v1/imports")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@Authenticated
 public class ImportResource {
     private final ImportProcessingService importProcessingService;
     private final ImportJobRepository importJobRepository;

@@ -72,8 +72,10 @@ public class ExportService {
         return switch (exportFormat) {
             case CSV -> DelimitedTextExportWriter.writeCsv(requestedColumns,
                                                            rows);
+
             case TXT -> DelimitedTextExportWriter.writeTxt(requestedColumns,
                                                            rows);
+
             case XLSX -> XlsxExportWriter.write(requestedColumns,
                                                 rows);
         };

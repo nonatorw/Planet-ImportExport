@@ -53,6 +53,14 @@ You can then execute your native executable with: `./build/import-export-1.0.0-S
 
 If you want to learn more about building native executables, please consult <https://quarkus.io/guides/gradle-tooling>.
 
+## Authentication
+
+All `/api/v1/**` endpoints require a valid OAuth2 access token (Client Credentials grant), issued by Keycloak. In dev/test, Keycloak is provisioned automatically by Quarkus Dev Services — no manual setup needed.
+
+**Access control model:** every authenticated client can call every endpoint (`@Authenticated`, no role/scope differentiation). This matches the current requirements, which define only "authenticated or not," not per-client permissions. If a future need arises to restrict specific clients to specific capabilities (e.g. a client that may only export, never import), this can be added with `@RolesAllowed` per endpoint plus matching Keycloak client roles/scopes — no architectural change required, just additional configuration.
+
+**Refresh tokens in dev/test:** the Dev-Services-managed Keycloak client does not issue a `refresh_token` for the Client Credentials grant (confirmed empirically; see `AuthenticationIT` Javadoc for the root cause). This is standard OAuth2 behavior for this grant — a client re-authenticates with its own credentials on every token request rather than refreshing a session. If a real deployment's identity provider needs to issue refresh tokens for this grant anyway, its client must have the `offline_access` client scope added explicitly; this is an IdP configuration change, not an application code change.
+
 ## Related Guides
 
 - REST ([guide](https://quarkus.io/guides/rest)): Build RESTful web services and APIs using Jakarta REST (formerly JAX-RS)

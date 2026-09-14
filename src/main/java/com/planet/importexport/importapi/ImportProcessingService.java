@@ -45,16 +45,17 @@ import jakarta.inject.Inject;
 public class ImportProcessingService {
     private static final Logger LOG =
             Logger.getLogger(ImportProcessingService.class);
+
     private static final String CHUNK_SIZE_KEY = "chunkSize";
 
-    private final ImportJobRepository importJobRepository;
-    private final StagingEntryRepository stagingEntryRepository;
+    private final Clock clock;
     private final CustomerRecordRepository customerRecordRepository;
-    private final JobConfigurationRepository jobConfigurationRepository;
-    private final JobIntersectionGate gate;
     private final ExecutorService importExecutor;
     private final ImportJobIdGenerator jobIdGenerator;
-    private final Clock clock;
+    private final ImportJobRepository importJobRepository;
+    private final JobConfigurationRepository jobConfigurationRepository;
+    private final JobIntersectionGate gate;
+    private final StagingEntryRepository stagingEntryRepository;
 
     /**
      * CDI-injected constructor: delegates to the package-visible constructor

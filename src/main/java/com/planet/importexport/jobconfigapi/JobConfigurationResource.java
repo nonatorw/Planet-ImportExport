@@ -13,6 +13,7 @@ import com.planet.importexport.jobconfigapi.dto.JobConfigurationResponse;
 import com.planet.importexport.jobconfigapi.dto.UpdateJobConfigurationRequest;
 import com.planet.importexport.jobconfigapi.exception.mapper.InvalidJobConfigurationValueExceptionMapper;
 
+import io.quarkus.security.Authenticated;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
@@ -39,15 +40,14 @@ import jakarta.ws.rs.core.Response;
  * into an HTTP response — see {@link InvalidJobConfigurationValueExceptionMapper}
  * — since that exception "carries no HTTP concern itself" per its own Javadoc.
  *
- * <p>Not yet OIDC-protected: per docs/openspec/changes/file-import-export/tasks.md
- * ("Execution instructions"), Group E (Authentication) is applied on top of
- * the already-implemented Groups B/C/D resource classes only after they are
- * all complete — adding security annotations here now would be out of this
- * task's scope.
+ * <p>{@code E1} (ADR-0006): requires a valid OIDC bearer token. See
+ * {@link Authenticated} usage rationale on
+ * {@link com.planet.importexport.importapi.ImportResource}.
  */
 @Path("/api/v1/job-configurations")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@Authenticated
 public class JobConfigurationResource {
     private final JobConfigurationRepository repository;
 

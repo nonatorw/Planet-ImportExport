@@ -3,6 +3,7 @@ package com.planet.importexport.exportapi;
 import com.planet.importexport.exportapi.dto.ExportRequest;
 import com.planet.importexport.exportapi.model.ExportFormat;
 
+import io.quarkus.security.Authenticated;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
@@ -19,9 +20,14 @@ import jakarta.ws.rs.core.Response;
  * 2: "body = file content in requested format").
  * No {@code Content-Disposition}/filename is mandated by the spec, so none is
  * set here.
+ *
+ * <p>{@code E1} (ADR-0006): requires a valid OIDC bearer token. See
+ * {@link Authenticated} usage rationale on
+ * {@link com.planet.importexport.importapi.ImportResource}.
  */
 @Path("/api/v1/exports")
 @Consumes(MediaType.APPLICATION_JSON)
+@Authenticated
 public class ExportResource {
 
     private static final String TEXT_CSV = "text/csv";

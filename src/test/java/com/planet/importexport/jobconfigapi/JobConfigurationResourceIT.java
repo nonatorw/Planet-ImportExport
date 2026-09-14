@@ -11,6 +11,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.planet.importexport.authapi.support.BearerTokenTestSupport;
 import com.planet.importexport.jobconfig.JobConfigurationEntry;
 import com.planet.importexport.jobconfig.JobConfigurationRepository;
 import com.planet.importexport.jobconfig.JobConfigurationValueType;
@@ -19,6 +20,7 @@ import com.planet.importexport.mongo.FlapdoodleMongoTestResource;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
+import io.restassured.specification.RequestSpecification;
 import jakarta.inject.Inject;
 
 /**
@@ -29,6 +31,12 @@ import jakarta.inject.Inject;
  * thin CRUD delegator with no business logic worth isolating behind a mock,
  * so a full HTTP-to-Mongo round trip is the more meaningful test per
  * {@code @422-frameworks-quarkus-testing-integration-tests}.
+ *
+ * <p>{@code E1} (ADR-0006) made this resource {@code @Authenticated}; every
+ * request below carries a bearer token obtained from the Dev-Services
+ * Keycloak realm via {@link BearerTokenTestSupport} — see
+ * {@code AuthenticationIT} for the dedicated 401/200 authentication-scenario
+ * coverage.</p>
  */
 @QuarkusTest
 @QuarkusTestResource(FlapdoodleMongoTestResource.class)
@@ -38,6 +46,9 @@ class JobConfigurationResourceIT {
 
     @Inject
     JobConfigurationRepository repository;
+
+    @Inject
+    BearerTokenTestSupport bearerTokenTestSupport;
 
     // Same rationale as JobConfigurationRepositoryIT: the shared Quarkus test
     // context already ran JobConfigurationSeedMigration's
@@ -68,7 +79,7 @@ class JobConfigurationResourceIT {
                                           "retry flag",
                                           Instant.now()));
 
-        given().when()
+        authenticatedRequest().when()
                .get(BASE_PATH)
                .then()
                .statusCode(200)
@@ -77,7 +88,7 @@ class JobConfigurationResourceIT {
 
     @Test
     void list_returnsEmptyArray_whenNoEntries() {
-        given().when()
+        authenticatedRequest().when()
                .get(BASE_PATH)
                .then()
                .statusCode(200)
@@ -93,7 +104,7 @@ class JobConfigurationResourceIT {
                                           "batch size",
                                           Instant.now()));
 
-        given().when()
+        authenticatedRequest().when()
                .get(BASE_PATH + "/chunkSize")
                .then()
                .statusCode(200)
@@ -106,7 +117,7 @@ class JobConfigurationResourceIT {
 
     @Test
     void getByKey_returns404_whenAbsent() {
-        given().when()
+        authenticatedRequest().when()
                .get(BASE_PATH + "/doesNotExist")
                .then()
                .statusCode(404);
@@ -118,7 +129,7 @@ class JobConfigurationResourceIT {
                       {"key":"chunkSize","value":"500","valueType":"INTEGER","description":"batch size"}
                       """;
 
-        given().contentType(ContentType.JSON)
+        authenticatedRequest().contentType(ContentType.JSON)
                .body(body)
                .when()
                .post(BASE_PATH)
@@ -140,7 +151,7 @@ class JobConfigurationResourceIT {
                       {"key":"chunkSize","value":"not-a-number","valueType":"INTEGER","description":"batch size"}
                       """;
 
-        given().contentType(ContentType.JSON)
+        authenticatedRequest().contentType(ContentType.JSON)
                .body(body)
                .when()
                .post(BASE_PATH)
@@ -154,7 +165,7 @@ class JobConfigurationResourceIT {
                       {"value":"500","valueType":"INTEGER","description":"batch size"}
                       """;
 
-        given().contentType(ContentType.JSON)
+        authenticatedRequest().contentType(ContentType.JSON)
                .body(body)
                .when()
                .post(BASE_PATH)
@@ -174,7 +185,7 @@ class JobConfigurationResourceIT {
                       {"key":"chunkSize","value":"1000","valueType":"INTEGER","description":"duplicate"}
                       """;
 
-        given().contentType(ContentType.JSON)
+        authenticatedRequest().contentType(ContentType.JSON)
                .body(body)
                .when()
                .post(BASE_PATH)
@@ -194,7 +205,7 @@ class JobConfigurationResourceIT {
                       {"value":"1000"}
                       """;
 
-        given().contentType(ContentType.JSON)
+        authenticatedRequest().contentType(ContentType.JSON)
                .body(body)
                .when()
                .put(BASE_PATH + "/chunkSize")
@@ -222,7 +233,7 @@ class JobConfigurationResourceIT {
                       {"value":"false","valueType":"BOOLEAN","description":"new description"}
                       """;
 
-        given().contentType(ContentType.JSON)
+        authenticatedRequest().contentType(ContentType.JSON)
                .body(body)
                .when()
                .put(BASE_PATH + "/retryEnabled")
@@ -244,7 +255,7 @@ class JobConfigurationResourceIT {
                       {"value":"not-a-number"}
                       """;
 
-        given().contentType(ContentType.JSON)
+        authenticatedRequest().contentType(ContentType.JSON)
                .body(body)
                .when()
                .put(BASE_PATH + "/chunkSize")
@@ -265,7 +276,7 @@ class JobConfigurationResourceIT {
                       {"value":"1000"}
                       """;
 
-        given().contentType(ContentType.JSON)
+        authenticatedRequest().contentType(ContentType.JSON)
                .body(body)
                .when()
                .put(BASE_PATH + "/doesNotExist")
@@ -282,7 +293,7 @@ class JobConfigurationResourceIT {
                                           "batch size",
                                           Instant.now()));
 
-        given().when()
+        authenticatedRequest().when()
                .delete(BASE_PATH + "/chunkSize")
                .then()
                .statusCode(204);
@@ -294,7 +305,7 @@ class JobConfigurationResourceIT {
 
     @Test
     void delete_returns404_whenKeyAbsent() {
-        given().when()
+        authenticatedRequest().when()
                .delete(BASE_PATH + "/doesNotExist")
                .then()
                .statusCode(404);
@@ -313,5 +324,18 @@ class JobConfigurationResourceIT {
                                                       persisted.valueType);
         org.junit.jupiter.api.Assertions.assertEquals(expectedDescription,
                                                       persisted.description);
+    }
+
+    /**
+     * @return a REST Assured request specification pre-authorized with a
+     *         fresh bearer token from the Dev-Services Keycloak realm (see
+     *         {@link BearerTokenTestSupport}), so every HTTP call in this
+     *         class reaches the now-{@code @Authenticated} resource
+     *         ({@code E1}) without repeating the token-acquisition/header
+     *         wiring at every call site
+     */
+    private RequestSpecification authenticatedRequest() {
+        return given().auth()
+                      .oauth2(bearerTokenTestSupport.obtainAccessToken());
     }
 }

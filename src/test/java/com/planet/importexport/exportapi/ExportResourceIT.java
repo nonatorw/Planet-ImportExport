@@ -10,24 +10,35 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import com.planet.importexport.authapi.support.BearerTokenTestSupport;
 import com.planet.importexport.customerrecord.CustomerRecordRepository;
 import com.planet.importexport.mongo.FlapdoodleMongoTestResource;
 
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
+import io.restassured.specification.RequestSpecification;
 import jakarta.inject.Inject;
 
 /**
  * Integration test for {@code POST /api/v1/exports} (task C1-C5;
  * specs/export/spec.md), exercised end-to-end against a real (embedded)
  * MongoDB instance and the actual HTTP stack.
+ *
+ * <p>{@code E1} (ADR-0006) made this resource {@code @Authenticated}; every
+ * request below carries a bearer token obtained from the Dev-Services
+ * Keycloak realm via {@link BearerTokenTestSupport} — see
+ * {@code AuthenticationIT} for the dedicated 401/200 authentication-scenario
+ * coverage.</p>
  */
 @QuarkusTest
 @QuarkusTestResource(FlapdoodleMongoTestResource.class)
 class ExportResourceIT {
     @Inject
     CustomerRecordRepository repository;
+
+    @Inject
+    BearerTokenTestSupport bearerTokenTestSupport;
 
     @AfterEach
     void cleanUp() {
@@ -43,7 +54,7 @@ class ExportResourceIT {
                        "country", "Portugal"),
                 "job-1");
 
-        String body = given().contentType(ContentType.JSON)
+        String body = authenticatedRequest().contentType(ContentType.JSON)
                              .body("""
                                    {"format":"CSV","columns":["id","name","email","country"]}
                                    """)
@@ -66,7 +77,7 @@ class ExportResourceIT {
                "email", "john@example.com"),
                "job-1");
 
-        String body = given().contentType(ContentType.JSON)
+        String body = authenticatedRequest().contentType(ContentType.JSON)
                              .body("""
                                    {"format":"TXT","columns":["name","email"]}
                                    """)
@@ -88,7 +99,7 @@ class ExportResourceIT {
                                             "country", "Portugal"),
                                      "job-1");
 
-        byte[] body = given().contentType(ContentType.JSON)
+        byte[] body = authenticatedRequest().contentType(ContentType.JSON)
                              .body("""
                                    {"format":"XLSX","columns":["id","name","country"]}
                                    """)
@@ -123,7 +134,7 @@ class ExportResourceIT {
                                      Map.of("country", "Spain"),
                                      "job-2");
 
-        String body = given().contentType(ContentType.JSON)
+        String body = authenticatedRequest().contentType(ContentType.JSON)
                              .body("""
                                    {"format":"CSV","columns":["id","country"]}
                                    """)
@@ -139,7 +150,7 @@ class ExportResourceIT {
 
     @Test
     void exportRequestWithUnknownColumn_returns400NamingIt() {
-        given().contentType(ContentType.JSON)
+        authenticatedRequest().contentType(ContentType.JSON)
                .body("""
                      {"format":"CSV","columns":["id","loyalty_tier"]}
                      """)
@@ -153,7 +164,7 @@ class ExportResourceIT {
 
     @Test
     void exportRequestWithLegacyXlsFormat_isRejectedNotSilentlyFallenBack() {
-        given().contentType(ContentType.JSON)
+        authenticatedRequest().contentType(ContentType.JSON)
                .body("""
                      {"format":"XLS","columns":["id","name"]}
                      """)
@@ -166,7 +177,7 @@ class ExportResourceIT {
 
     @Test
     void exportRequestWithBlankFormat_returns400() {
-        given().contentType(ContentType.JSON)
+        authenticatedRequest().contentType(ContentType.JSON)
                .body("""
                      {"format":"","columns":["id"]}
                      """)
@@ -178,7 +189,7 @@ class ExportResourceIT {
 
     @Test
     void exportRequestWithEmptyColumns_returns400() {
-        given().contentType(ContentType.JSON)
+        authenticatedRequest().contentType(ContentType.JSON)
                .body("""
                      {"format":"CSV","columns":[]}
                      """)
@@ -186,5 +197,18 @@ class ExportResourceIT {
                .post("/api/v1/exports")
                .then()
                .statusCode(400);
+    }
+
+    /**
+     * @return a REST Assured request specification pre-authorized with a
+     *         fresh bearer token from the Dev-Services Keycloak realm (see
+     *         {@link BearerTokenTestSupport}), so every HTTP call in this
+     *         class reaches the now-{@code @Authenticated} resource
+     *         ({@code E1}) without repeating the token-acquisition/header
+     *         wiring at every call site
+     */
+    private RequestSpecification authenticatedRequest() {
+        return given().auth()
+                      .oauth2(bearerTokenTestSupport.obtainAccessToken());
     }
 }

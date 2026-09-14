@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
  * local parts, comments, IP-literal domains, etc.) — the import spec
  * explicitly calls for a "simplified" pattern, and the only documented
  * negative example (import spec scenario "A row with an invalid email is
- * staged") is a missing top-level domain.
+ * staged") is a missing top-level domain.</p>
  */
 public final class EmailValidator {
 
@@ -23,14 +23,17 @@ public final class EmailValidator {
     private static final Pattern SIMPLIFIED_RFC_5322 =
             Pattern.compile("^[^\\s@]+@[^\\s@.]+(\\.[^\\s@.]+)+$");
 
-    /** Not instantiable: all behavior is exposed through {@link #isValid(String)}. */
+    /**
+     * Not instantiable: all behavior is exposed through
+     * {@link #isValid(String)}.
+     */
     private EmailValidator() {
         // Utility class.
     }
 
     /**
-     * Validates a raw {@code email} cell value against the simplified
-     * RFC 5322 pattern.
+     * Validates a raw {@code email} cell value against the simplified RFC 5322
+     * pattern.
      *
      * @param email the raw string value from the source row; may be
      *              {@code null}

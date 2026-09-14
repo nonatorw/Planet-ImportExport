@@ -50,8 +50,9 @@ public class ImportJobDocument {
     public ImportJobStatus status;
 
     /**
-     * When the job was accepted and persisted as {@link ImportJobStatus#PENDING},
-     * per design.md section 3 step 1. Also the ordering key used by
+     * When the job was accepted and persisted as
+     * {@link ImportJobStatus#PENDING}, per design.md section 3 step 1.
+     * Also the ordering key used by
      * {@link ImportJobRepository#findPendingOrderedByArrival()}.
      */
     public Instant submittedAt;

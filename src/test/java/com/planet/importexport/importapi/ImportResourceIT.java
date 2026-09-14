@@ -16,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import com.planet.importexport.authapi.support.BearerTokenTestSupport;
 import com.planet.importexport.customerrecord.CustomerRecordRepository;
 import com.planet.importexport.importjob.ImportJobRepository;
 import com.planet.importexport.jobconfig.JobConfigurationEntry;
@@ -27,6 +28,7 @@ import com.planet.importexport.staging.StagingEntryRepository;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
+import io.restassured.specification.RequestSpecification;
 import jakarta.inject.Inject;
 
 /**
@@ -40,6 +42,13 @@ import jakarta.inject.Inject;
  * <p>Because processing is asynchronous, tests poll the status endpoint until
  * the job reaches a terminal status rather than asserting immediately after
  * submission.</p>
+ *
+ * <p>{@code E1} (ADR-0006) made this resource {@code @Authenticated}; every
+ * request below carries a bearer token obtained from the Dev-Services
+ * Keycloak realm via {@link BearerTokenTestSupport} (see {@code AuthenticationIT}
+ * for the dedicated authentication-scenario coverage — 401 without a token,
+ * 200 with one — which is intentionally not re-asserted here to avoid
+ * duplicating Group E's own test responsibility).</p>
  */
 @QuarkusTest
 @QuarkusTestResource(FlapdoodleMongoTestResource.class)
@@ -48,6 +57,7 @@ class ImportResourceIT {
     @Inject StagingEntryRepository stagingEntryRepository;
     @Inject CustomerRecordRepository customerRecordRepository;
     @Inject JobConfigurationRepository jobConfigurationRepository;
+    @Inject BearerTokenTestSupport bearerTokenTestSupport;
 
     @TempDir Path tempDir;
 
@@ -86,7 +96,7 @@ class ImportResourceIT {
     void submit_returns202WithJobIdOnly() throws IOException {
         Path file = writeCsv("id,name,email,age,country\n1,John Smith,john@example.com,35,Portugal\n");
 
-        given().contentType(ContentType.JSON)
+        authenticatedRequest().contentType(ContentType.JSON)
                .body("{\"filePath\":\"" + escape(file) + "\"}")
                .when()
                .post("/api/v1/imports")
@@ -99,7 +109,7 @@ class ImportResourceIT {
 
     @Test
     void submit_returns400WhenFilePathNotReadable() {
-        given().contentType(ContentType.JSON)
+        authenticatedRequest().contentType(ContentType.JSON)
                .body("{\"filePath\":\"/does/not/exist.csv\"}")
                .when()
                .post("/api/v1/imports")
@@ -109,7 +119,7 @@ class ImportResourceIT {
 
     @Test
     void submit_returns400WhenFilePathBlank() {
-        given().contentType(ContentType.JSON)
+        authenticatedRequest().contentType(ContentType.JSON)
                .body("{\"filePath\":\"\"}")
                .when()
                .post("/api/v1/imports")
@@ -119,7 +129,7 @@ class ImportResourceIT {
 
     @Test
     void status_returns404ForUnknownJob() {
-        given().when()
+        authenticatedRequest().when()
                .get("/api/v1/imports/job-does-not-exist")
                .then()
                .statusCode(404);
@@ -138,7 +148,7 @@ class ImportResourceIT {
         String jobId = submitAndGetJobId(file);
         waitForTerminalStatus(jobId);
 
-        given().when()
+        authenticatedRequest().when()
                .get("/api/v1/imports/" + jobId)
                .then()
                .statusCode(200)
@@ -165,7 +175,7 @@ class ImportResourceIT {
         String jobId = submitAndGetJobId(file);
         waitForTerminalStatus(jobId);
 
-        given().when()
+        authenticatedRequest().when()
                .get("/api/v1/imports/" + jobId)
                .then()
                .statusCode(200)
@@ -191,7 +201,7 @@ class ImportResourceIT {
         String jobId = submitAndGetJobId(file);
         waitForTerminalStatus(jobId);
 
-        given().when()
+        authenticatedRequest().when()
                .get("/api/v1/imports/" + jobId)
                .then()
                .statusCode(200)
@@ -211,7 +221,7 @@ class ImportResourceIT {
         String jobId = submitAndGetJobId(file);
         waitForTerminalStatus(jobId);
 
-        given().when()
+        authenticatedRequest().when()
                .get("/api/v1/imports/" + jobId)
                .then()
                .statusCode(200)
@@ -256,7 +266,7 @@ class ImportResourceIT {
     }
 
     private String submitAndGetJobId(Path file) {
-        return given().contentType(ContentType.JSON)
+        return authenticatedRequest().contentType(ContentType.JSON)
                       .body("{\"filePath\":\"" + escape(file) + "\"}")
                       .when()
                       .post("/api/v1/imports")
@@ -270,7 +280,7 @@ class ImportResourceIT {
         long deadline = System.currentTimeMillis() + 10_000;
 
         while (System.currentTimeMillis() < deadline) {
-            String status = given().when()
+            String status = authenticatedRequest().when()
                                    .get("/api/v1/imports/" + jobId)
                                    .then()
                                    .extract()
@@ -295,5 +305,18 @@ class ImportResourceIT {
 
     private String escape(Path path) {
         return path.toString().replace("\\", "\\\\");
+    }
+
+    /**
+     * @return a REST Assured request specification pre-authorized with a
+     *         fresh bearer token from the Dev-Services Keycloak realm (see
+     *         {@link BearerTokenTestSupport}), so every HTTP call in this
+     *         class reaches the now-{@code @Authenticated} resource
+     *         ({@code E1}) without repeating the token-acquisition/header
+     *         wiring at every call site
+     */
+    private RequestSpecification authenticatedRequest() {
+        return given().auth()
+                      .oauth2(bearerTokenTestSupport.obtainAccessToken());
     }
 }

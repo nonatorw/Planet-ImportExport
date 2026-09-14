@@ -8,13 +8,20 @@ package com.planet.importexport.importapi.validator;
  */
 public final class AgeValidator {
 
-    /** Inclusive lower bound of a valid age ({@code B5}; ADR-0005 decision 14). */
+    /**
+     * Inclusive lower bound of a valid age ({@code B5}; ADR-0005 decision 14).
+     */
     private static final int MIN_AGE = 0;
 
-    /** Inclusive upper bound of a valid age ({@code B5}; ADR-0005 decision 14). */
+    /**
+     * Inclusive upper bound of a valid age ({@code B5}; ADR-0005 decision 14).
+     */
     private static final int MAX_AGE = 120;
 
-    /** Not instantiable: all behavior is exposed through {@link #isValid(String)}. */
+    /**
+     * Not instantiable: all behavior is exposed through
+     * {@link #isValid(String)}.
+     */
     private AgeValidator() {
         // Utility class.
     }

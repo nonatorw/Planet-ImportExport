@@ -35,15 +35,18 @@ import com.planet.importexport.importapi.model.RowOutcome;
  */
 public final class ImportRowValidator {
 
-    /** Not instantiable: all behavior is exposed through {@link #validate(CsvRow, Set)}. */
+    /**
+     * Not instantiable: all behavior is exposed through
+     * {@link #validate(CsvRow, Set)}.
+     */
     private ImportRowValidator() {
         // Utility class.
     }
 
     /**
-     * Validates one row and reports the outcome — either the row's
-     * recognized fields, ready to persist, or a human-readable reason it was
-     * routed to staging.
+     * Validates one row and reports the outcome — either the row's recognized
+     * fields, ready to persist, or a human-readable reason it was routed to
+     * staging.
      *
      * @param row            the parsed row
      * @param unknownColumns header columns (if any) outside the recognized
@@ -64,7 +67,8 @@ public final class ImportRowValidator {
 
         if (recordId == null
         ||  recordId.isBlank()) {
-            return new RowOutcome.Failure("missing value for recognized field 'id'");
+            return new RowOutcome.Failure(
+                    "missing value for recognized field 'id'");
         }
 
         Map<String, Object> recognizedFields = new LinkedHashMap<>();
@@ -109,7 +113,8 @@ public final class ImportRowValidator {
                                 "' is not an integer in range 0-120");
                     }
 
-                    recognizedFields.put(columnName, Integer.parseInt(value.trim()));
+                    recognizedFields.put(columnName,
+                                         Integer.parseInt(value.trim()));
                 }
 
                 default -> recognizedFields.put(columnName, value);
