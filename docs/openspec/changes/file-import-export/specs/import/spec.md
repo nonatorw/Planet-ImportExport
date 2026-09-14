@@ -88,6 +88,17 @@ The system SHALL validate each recognized field of each row (email against a sim
 - **THEN** the row is recorded in the staging store with an error description mentioning "age"
 - **AND** the row is not persisted as a customer record version
 
+### Requirement: Missing field values are staged, not rejected
+
+The system SHALL treat an empty value for a recognized field (`id`, `name`, `email`, `age`, `country`, `phone`) present in the header as a missing value, and SHALL route the affected row to the same staging store used for invalid values and unknown header columns rather than rejecting the entire file or silently dropping the row.
+
+#### Scenario: A row with a missing field value is staged
+
+- **GIVEN** a row under a recognized header column has an empty value (for example, an empty `age`)
+- **WHEN** the job finishes processing
+- **THEN** the row is recorded in the staging store with an error description mentioning that the field is missing
+- **AND** the row is not persisted as a customer record version
+
 ### Requirement: Unknown header columns are staged, not rejected
 
 The system SHALL route a row whose file declares a header column outside the recognized schema (`id`, `name`, `email`, `age`, `country`, `phone`) to the same staging store used for invalid values, distinguished only by the error description text.

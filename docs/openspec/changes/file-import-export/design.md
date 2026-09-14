@@ -2,6 +2,11 @@
 
 Governing ADRs: `docs/adr/ADR-0001` (storage), `ADR-0002` (async mechanism), `ADR-0003` (id-intersection serialization), `ADR-0004` (versioning/merge), `ADR-0005` (staging), `ADR-0006` (OAuth2/Keycloak), `ADR-0007` (job configuration value shape).
 
+## Implementation Location
+
+- Strategy: `feature-branch`
+- Reference: `feature/sr-software-dev-challenge`
+
 ## 1. Data model (MongoDB, embedded in-memory via Flapdoodle)
 
 ### 1.1 `customer_records` collection — one document per version (ADR-0001, ADR-0004)
@@ -102,7 +107,7 @@ Token issuance (ADR-0006): the client obtains an access token (and, if the Dev-S
 2. The endpoint submits a processing task to the managed executor (ADR-0002).
 3. Before the task body runs, it acquires the ADR-0003 serialization gate: check `idsInFile` against every currently `RUNNING` (and already-queued-ahead) job's `idsInFile`; if any intersection exists, wait for those jobs to reach `COMPLETED`/`FAILED` before proceeding, preserving arrival order among mutually-intersecting jobs.
 4. Once cleared to run, the task sets `status = RUNNING`, `startedAt = now`, then reads the file in batches sized by the current `chunkSize` job-configuration value (re-read per job start, not cached indefinitely, so a runtime configuration change takes effect on the next job).
-5. For each row in a batch: validate recognized-schema fields (email pattern, age range — confirmed decisions 13/14) and header columns (reject any column outside `id, name, email, age, country, phone`); on success, upsert the next version of `customer_records` for that row's `id` per ADR-0004's merge rule; on failure, insert a `staging_entries` document per ADR-0005.
+5. For each row in a batch, validate three distinct categories of problem, any one of which routes the row to staging instead of `customer_records`: missing (an empty value for a recognized field — confirmed decision 2), invalid (email pattern, age range — confirmed decisions 13/14), and unknown (a header column outside `id, name, email, age, country, phone`). On success (no missing, invalid, or unknown condition), upsert the next version of `customer_records` for that row's `id` per ADR-0004's merge rule; on any of the three failure categories, insert a `staging_entries` document per ADR-0005.
 6. After all batches complete, set `status = COMPLETED`, `completedAt = now`, and the final `summary` counts.
 7. `GET /api/v1/imports/{jobId}` reads the `import_jobs` document plus all matching `staging_entries` and returns them together.
 
