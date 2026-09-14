@@ -73,13 +73,32 @@ Feature: Import a CSV file asynchronously into storage
       """
       id,name,email,age,country,phone
       1,John Smith,john@example.com,35,Portugal,+351910000000
-      4,Ana Costa,ana@example.com,30,Portugal
+      4,Ana Costa,ana@example.com,,Portugal
       """
     And the job has finished processing
     When I query the status of that job
-    Then the status response shows total rows succeeded as 2
-    And the status response shows total rows failed as 0
+    Then the status response shows total rows succeeded as 1
+    And the status response shows total rows failed as 1
     And the stored current version for id "1" has phone "+351910000000"
+
+  # [PDF] Requirement 2: "Define the behaviour for fields that... [are] missing" —
+  # sample file customers_02.csv has an empty "age" for id "4" (Ana Costa).
+  # [DECISION 2] "Missing" = an empty value for a recognized field. It is staged
+  # using the same generic staging table as invalid values and unknown columns,
+  # distinguished only by errorDescription text.
+  Scenario: A row with a missing field value is written to staging
+    Given an import job was submitted for the file "customers_02.csv" with content:
+      """
+      id,name,email,age,country,phone
+      1,John Smith,john@example.com,35,Portugal,+351910000000
+      4,Ana Costa,ana@example.com,,Portugal
+      """
+    And the job has finished processing
+    When I query the status of that job
+    Then the status response shows total rows failed as 1
+    And the detailed staging error list for that job contains one entry with rowId for id "4"
+    And that staging entry's "errorDescription" mentions that "age" is missing
+    And that staging entry's "rowData" contains the original raw row
 
   # [DECISION 10] Chunk size is a runtime-configurable, database-backed setting,
   # not a hardcoded batch size.
