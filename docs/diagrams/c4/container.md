@@ -63,6 +63,6 @@ This is the C4 Level 2 (Container) diagram, decomposing the single "File Import 
 
 ## Limitations / notes
 
-- No diagram-validation tooling applies to this repository (see `docs/diagrams/c4/context.md`, Limitations, for the same rationale: no Gradle wrapper, no `pom.xml`, no `src/` yet). Mermaid syntax was validated by manual inspection.
+- No diagram-validation tooling applies to this repository (see `docs/diagrams/c4/context.md`, Limitations). Mermaid syntax was validated by manual inspection. This diagram predates the completed implementation and has not been re-validated against it — in particular, it does not yet show the Mongo Express dev-only container (`src/main/java/com/planet/importexport/devtools/MongoExpressDevService.java`) or that MongoDB runs as a real Dev Services container (not Flapdoodle) under `%dev`.
 - The Import Executor and REST API run inside the same JVM/deployment unit (per the proposal's "one deployment unit" framing); they are still shown as separate containers because C4 containers represent distinct runtime/responsibility boundaries, not necessarily separate deployables. This is a documentation choice, not an architectural claim of separate processes.
 - Component-level detail (e.g., specific classes/services inside the REST API or Executor) belongs to `docs/diagrams/c4/component.md`.

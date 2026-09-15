@@ -12,7 +12,7 @@ import com.planet.importexport.exportapi.exception.UnsupportedExportFormatExcept
 /**
  * Maps {@link UnsupportedExportFormatException} to {@code 400 Bad Request}
  * (task C5; specs/export/spec.md; design.md section 2: {@code 400 Bad
- * Request with {"error": "unknown column", "column": "loyalty_tier"}}).
+ * Request with {"error": "unsupported format", "format": "XLS"}}).
  *
  * <p>No {@code quarkus-http-problem} (RFC 7807) dependency is available in
  * this project yet (build.gradle has no such extension), so this mapper

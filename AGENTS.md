@@ -46,7 +46,7 @@ You are a Java developer, technical writer, backend engineer, full-stack develop
 
 ## Agent roles
 
-Four specialized user-level agents are available (defined in `~/.claude/agents/`), each grounded in market-standard frameworks (ISO/IEC 27001, TOGAF, PRINCE2, ITIL 4, Scrum, CompTIA) and technical practices (SOLID, Clean Code/Architecture, Object Calisthenics, TDD/BDD/ATDD, DDD, ACID). Full rationale in `docs/superpowers/specs/2026-09-13-agent-role-definitions-design.md`.
+Four specialized user-level agents are available (defined in `docs/agents/`), each grounded in market-standard frameworks (ISO/IEC 27001, TOGAF, PRINCE2, ITIL 4, Scrum, CompTIA) and technical practices (SOLID, Clean Code/Architecture, Object Calisthenics, TDD/BDD/ATDD, DDD, ACID). Full rationale in `docs/superpowers/specs/2026-09-13-agent-role-definitions-design.md`.
 
 | Agent | File | Invoke when |
 | --- | --- | --- |

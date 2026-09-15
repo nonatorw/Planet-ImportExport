@@ -11,7 +11,7 @@ The repository currently has no application code (`AGENTS.md`: "the Gradle/Quark
 - **Export capability**: a REST endpoint accepting a format (`CSV`, `TXT`, `XLSX`) and an ordered column list, returning the current version of every stored record with exactly the requested columns in the requested order, rejecting unrecognized columns with HTTP 400.
 - **Job configuration capability**: a generic CRUD REST endpoint over job settings (chunk size today, extensible later), backed by a MongoDB collection seeded via a startup migration (ADR-0007).
 - **Authentication capability**: OAuth2 Client Credentials protecting every endpoint above, backed by Quarkus OIDC and a Keycloak instance provisioned through Quarkus Dev Services (ADR-0006).
-- **Data model**: MongoDB collections for customer record versions, staging entries, job records, and job configuration entries, running on embedded in-memory MongoDB (Flapdoodle) with no external database infrastructure (ADR-0001).
+- **Data model**: MongoDB collections for customer record versions, staging entries, job records, and job configuration entries. Automated tests run against embedded in-memory MongoDB (Flapdoodle) with no external database infrastructure (ADR-0001); `quarkusDev`/manual runs use a real MongoDB container via Quarkus Dev Services instead (Flapdoodle is only wired up on the test classpath).
 
 This is a single, atomic, reviewable change: all five capabilities are part of one cohesive greenfield deliverable with no independent release timing, ownership, or rollback boundary between them (they share one codebase, one build, one deployment unit, and were approved together as one design).
 
@@ -29,7 +29,7 @@ This is a single, atomic, reviewable change: all five capabilities are part of o
 ## Impact
 
 - **Affected capabilities (new)**: `import`, `job-status`, `export`, `job-configuration`, `authentication`.
-- **Affected systems**: none pre-existing (greenfield). New runtime dependency: Docker, required only for Keycloak via Quarkus Dev Services (ADR-0006) — the database remains infrastructure-free (embedded MongoDB, ADR-0001).
+- **Affected systems**: none pre-existing (greenfield). New runtime dependency: Docker, required for Keycloak via Quarkus Dev Services (ADR-0006) in both `%dev` and `%test`, and also for MongoDB via Dev Services in `%dev` (ADR-0001) — the database remains infrastructure-free only for automated tests (embedded Flapdoodle MongoDB).
 - **Breaking changes**: none (no prior API or data model exists).
 
 ## Source artifacts and derivation

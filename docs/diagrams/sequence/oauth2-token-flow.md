@@ -13,7 +13,7 @@ sequenceDiagram
 
     Caller ->> Keycloak: POST /realms/{realm}/protocol/openid-connect/token<br/>grant_type=client_credentials<br/>client_id, client_secret
     Keycloak ->> Keycloak: authenticate client,<br/>issue signed access token<br/>(and refresh token, if realm<br/>client is configured to issue one)
-    Keycloak -->> Caller: 200 OK<br/>{ access_token, token_type,<br/>expires_in, [refresh_token] }
+    Keycloak -->> Caller: 200 OK<br/>{ access_token, token_type,<br/>expires_in, refresh_token }
 
     Caller ->> Filter: any /api/v1/** request<br/>Authorization: Bearer <access_token>
 
@@ -38,7 +38,7 @@ Key points reflected:
 
 - The token endpoint (`/realms/{realm}/protocol/openid-connect/token`) belongs to Keycloak, not to this application — design.md, section 5, states explicitly: "No custom token endpoint is implemented by this application (ADR-0006 rules this out explicitly)."
 - Keycloak itself is provisioned via Quarkus Dev Services for local/dev/test runs, which is why Docker is a hard dependency for authentication specifically (ADR-0006), even though the database remains infrastructure-free (embedded MongoDB, ADR-0001).
-- The refresh token is shown as conditional (`[refresh_token]`) because ADR-0006 documents explicitly that RFC 6749 does not mandate a refresh token for the Client Credentials grant — whether one is issued depends on the Dev-Services-managed realm/client configuration, which is an implementation-time detail, not a structural guarantee.
+- The refresh token is shown as always present (not conditional) because, although RFC 6749 does not mandate one for the Client Credentials grant, ADR-0006 requires it: the Dev Services realm is provisioned from a custom realm-export (`src/main/resources/quarkus-realm.json`) that sets `client_credentials.use_refresh_token=true` and adds `offline_access` as a default client scope, guaranteeing a `refresh_token` in the response — confirmed by `AuthenticationIT#tokenResponse_refreshTokenFieldPresent`. A production deployment must configure the same client attribute/scope on its own Keycloak realm.
 - The 401 branch shows the request never reaching the protected resource at all — rejection happens entirely at the OIDC Security Filter layer, before any business logic (import, export, job-status, or job-configuration) executes.
 
 ## Sources used

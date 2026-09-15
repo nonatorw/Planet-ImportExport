@@ -7,7 +7,7 @@ Governing ADRs: `docs/adr/ADR-0001` (storage), `ADR-0002` (async mechanism), `AD
 - Strategy: `feature-branch`
 - Reference: `feature/sr-software-dev-challenge`
 
-## 1. Data model (MongoDB, embedded in-memory via Flapdoodle)
+## 1. Data model (MongoDB; embedded in-memory via Flapdoodle for automated tests, a real Dev Services container for `quarkusDev`)
 
 ### 1.1 `customer_records` collection — one document per version (ADR-0001, ADR-0004)
 
@@ -92,7 +92,7 @@ All endpoints below are OIDC-protected resource-server endpoints (ADR-0006) exce
 | --- | --- | --- | --- | --- |
 | `POST` | `/api/v1/imports` | Submit an import job | `{ "filePath": "/data/imports/customers_02.csv" }` | `202 Accepted`, `{ "jobId": "job-abc123" }` |
 | `GET` | `/api/v1/imports/{jobId}` | Query job status | — | `200 OK`, `{ "jobId", "status", "summary": {"totalRows","succeeded","failed"}, "stagingErrors": [ {"rowId","rowData","errorDescription","processedAt"} ] }` |
-| `POST` | `/api/v1/exports` | Export stored data | `{ "format": "CSV\|TXT\|XLSX", "columns": ["id","name","email","country"] }` | `200 OK`, body = file content in requested format; `400 Bad Request` with `{ "error": "unknown column", "column": "loyalty_tier" }` on unrecognized column |
+| `POST` | `/api/v1/exports` | Export stored data | `{ "format": "CSV\|TXT\|XLSX", "columns": ["id","name","email","country"] }` | `200 OK`, body = file content in requested format; `400 Bad Request` with `{ "error": "unknown column", "column": "loyalty_tier" }` on unrecognized column, or `{ "error": "unsupported format", "format": "XLS" }` on an unsupported/legacy format |
 | `GET` | `/api/v1/job-configurations` | List all job configuration entries | — | `200 OK`, array of config entries |
 | `GET` | `/api/v1/job-configurations/{key}` | Read one entry | — | `200 OK`, config entry, or `404` |
 | `POST` | `/api/v1/job-configurations` | Create a new entry | `{ "key", "value", "valueType", "description" }` | `201 Created` |

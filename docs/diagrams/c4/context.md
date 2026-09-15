@@ -47,5 +47,5 @@ This is the C4 Level 1 (System Context) diagram for the File Import and Export S
 
 ## Limitations / notes
 
-- No diagram-validation tooling (e.g., `mvn validate`) applies to this repository: it is a Gradle/Quarkus project and, per `AGENTS.md`, "the Gradle/Quarkus skeleton has not been scaffolded yet" — there is no `build.gradle`, `pom.xml`, or `src/` yet. Mermaid syntax was validated by manual inspection only (balanced brackets, valid `graph TB` node/edge syntax, no reserved-character conflicts).
+- No diagram-validation tooling applies to this repository: it is a Gradle/Quarkus project with no linter/CI step that checks Mermaid syntax. Mermaid syntax was validated by manual inspection only (balanced brackets, valid `graph TB` node/edge syntax, no reserved-character conflicts). This diagram was authored before `src/`/`build.gradle` existed; it has not been re-validated against the now-complete implementation.
 - This diagram intentionally omits internal containers (API, executor, MongoDB) — those belong to the Container-level diagram (`docs/diagrams/c4/container.md`).

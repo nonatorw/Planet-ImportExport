@@ -38,6 +38,20 @@ The asynchronous processing mechanism itself (a managed executor, not an externa
 
 Settings such as `chunkSize` live in the database, not in static application configuration, and are seeded by a startup migration. The same generic CRUD API can hold any future key/value setting, each with a declared value type (`STRING`, `INTEGER`, `BOOLEAN`) validated at write time (**ADR-0007**).
 
+### Architecture at a glance
+
+The diagrams below (Mermaid, rendered inline by GitHub) illustrate the flows described above in more detail. Each one also documents its own sources, the ADR decisions it reflects, and known limitations:
+
+- [**C4 — System Context**](docs/diagrams/c4/context.md) — this service's place among its actors (caller, Keycloak) and the filesystem it reads from.
+- [**C4 — Containers**](docs/diagrams/c4/container.md) — the REST API, MongoDB, Keycloak, and the dev-only Mongo Express UI as deployable units.
+- [**C4 — Components**](docs/diagrams/c4/component.md) — internal decomposition of the REST API (resources, `ExportService` and its collaborators) and the import job orchestration (`ImportProcessingService`, `JobIntersectionGate`, validators).
+- [**Sequence — Import flow**](docs/diagrams/sequence/import-flow.md) — submission, the ADR-0003 serialization gate (`arrive()`/`awaitTurn()`), chunked row processing, staging, and status polling.
+- [**Sequence — Export flow**](docs/diagrams/sequence/export-flow.md) — column validation, current-version projection, and per-format serialization.
+- [**Sequence — OAuth2 token flow**](docs/diagrams/sequence/oauth2-token-flow.md) — the Client Credentials grant against Keycloak and bearer-token validation on protected endpoints.
+- [**Use cases**](docs/diagrams/use-case/use-cases.md) — the full set of caller-facing capabilities, one per REST endpoint.
+
+The architectural decisions behind these flows are recorded as ADRs under [`docs/adr/`](docs/adr/) (storage model, async processing, job serialization, record versioning, staging, authentication, job configuration).
+
 ## How to use the services
 
 All endpoints below require a Bearer access token — obtain one first via the Keycloak token endpoint (Client Credentials grant), then send it as `Authorization: Bearer <access_token>` on every call. See [Authentication](#authentication) for the full mechanism and dev/test credentials.
@@ -185,7 +199,7 @@ Response — `201 Created`:
 
 ### Inspecting stored data
 
-`quarkusDev` also starts a [Mongo Express](https://github.com/mongo-express/mongo-express) UI at **[`http://localhost:8081`](http://localhost:8081)**, pointed at the same MongoDB Dev Services instance the application uses — no manual setup, no separate `docker run`, no auth. Open the `importexport` database from the sidebar to browse collections such as `CustomerRecordDocument` (imported records), `ImportJobDocument` (job status), `StagingEntry` (rejected rows), and `JobConfigurationEntry`, and inspect individual documents without writing a query.
+`quarkusDev` also starts a [Mongo Express](https://github.com/mongo-express/mongo-express) UI at **[`http://localhost:8081`](http://localhost:8081)**, pointed at the same MongoDB Dev Services instance the application uses — no manual setup, no separate `docker run`, no auth. Open the `importexport` database from the sidebar to browse collections such as `customer_records` (imported records), `import_jobs` (job status), `staging_entries` (rejected rows), and `job_configuration`, and inspect individual documents without writing a query.
 
 This is dev-mode only: automated tests use an embedded, in-memory MongoDB (Flapdoodle, **ADR-0001**), so there is no Dev Services container for it to attach to under `./gradlew test`. The container (name `planet-importexport-mongo-express-dev`) starts on application startup and is removed on shutdown, mirroring the lifecycle of the Keycloak/MongoDB Dev Services containers themselves.
 
@@ -258,7 +272,7 @@ All `/api/v1/**` endpoints require a valid OAuth2 access token (Client Credentia
 
 **Fixed port for `quarkusDev` (manual/demo use):** `%dev` pins Keycloak's Dev Services container to host port **`8543`** (`quarkus.keycloak.devservices.port` in `application.yml`) instead of Testcontainers' usual random free port. This makes the realm base URL always `http://localhost:8543/realms/quarkus`, so it can be used directly in a `curl` command, a Postman environment, or a devcontainer `forwardPorts` entry without discovering a new port on every run — see [Get an access token](#get-an-access-token) above for the exact command. `%test` intentionally keeps the random port: automated tests read the effective `quarkus.oidc.auth-server-url` via `@ConfigProperty` at runtime, so no human needs to know the port number, and a fixed port would only risk collisions between concurrent test runs.
 
-**Working inside this devcontainer:** if you access the application from a browser on the host machine (not from a terminal already inside the container), port `8543` needs to be reachable from outside the container too. It is already declared in `.devcontainer/devcontainer.json`'s `forwardPorts`, so VS Code should forward it automatically the first time Keycloak starts; if it does not, forward it by hand once from the **Ports** panel (`Forward a Port` → `8543`) — this is a one-time step per devcontainer session, not a per-run one, since the port itself no longer changes.
+**Working inside a devcontainer:** if you access the application from a browser on the host machine (not from a terminal already inside the container), port `8543` needs to be reachable from outside the container too. This repository does not ship its own `.devcontainer/devcontainer.json`; if the devcontainer you use declares a static `forwardPorts` list (as this project's own development environment does), add `8543` (and `8081` for [Mongo Express](#inspecting-stored-data)) to it so VS Code forwards them automatically the first time the services start. Otherwise, forward the ports by hand once from the **Ports** panel (`Forward a Port`) — this is a one-time step per devcontainer session, not a per-run one, since the port numbers do not change.
 
 ## Next Steps
 
