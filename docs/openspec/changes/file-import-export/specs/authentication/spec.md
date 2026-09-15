@@ -27,7 +27,7 @@ The system SHALL rely on a ready-made Quarkus ecosystem OIDC extension and a rea
 - **GIVEN** a registered OAuth2 client with a valid client id and client secret
 - **WHEN** the client requests a token from the identity provider's token endpoint using the `client_credentials` grant
 - **THEN** an access token is returned
-- **AND** a refresh token is returned, if the identity provider's client configuration issues one for this grant
+- **AND** a refresh token is returned
 
 ### Requirement: No custom-built authorization server
 

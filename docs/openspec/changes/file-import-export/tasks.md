@@ -6,64 +6,64 @@ Group convention: tasks sharing the same group id are done by the **same** agent
 
 ## Project scaffolding — Group A0
 
-- [ ] `A0.1` Scaffold the Gradle/Quarkus project skeleton (`src/main/java`, `src/main/resources`, `src/test/java`) per `AGENTS.md` (Java 25, Gradle, Quarkus).
-- [ ] `A0.2` Add MongoDB client extension (`quarkus-mongodb-client` or `quarkus-mongodb-panache`) and embedded/in-memory Flapdoodle test-and-runtime support per ADR-0001.
-- [ ] `A0.3` Add `quarkus-oidc` extension and Keycloak Dev Services configuration per ADR-0006.
+- [x] `A0.1` Scaffold the Gradle/Quarkus project skeleton (`src/main/java`, `src/main/resources`, `src/test/java`) per `AGENTS.md` (Java 25, Gradle, Quarkus).
+- [x] `A0.2` Add MongoDB client extension (`quarkus-mongodb-client` or `quarkus-mongodb-panache`) and embedded/in-memory Flapdoodle test-and-runtime support per ADR-0001.
+- [x] `A0.3` Add `quarkus-oidc` extension and Keycloak Dev Services configuration per ADR-0006.
 
 ## Data model (ADR-0001, ADR-0004, ADR-0005, ADR-0007; design.md section 1)
 
-- [ ] `A1` Implement the `customer_records` document model and repository, including the "current version = highest version per id" query and the version-N+1 merge computation (ADR-0004).
-- [ ] `A2` Implement the `staging_entries` document model and repository, with the fixed field set `jobId`, `rowId`, `rowData`, `errorDescription`, `processedAt` (ADR-0005).
-- [ ] `A3` Implement the `import_jobs` document model and repository, including `idsInFile` and `summary` fields (design.md section 1.3).
-- [ ] `A4.1` Implement the `job_configuration` document model and repository, including `valueType`-aware write-time validation (ADR-0007).
-- [ ] `A4.2` Implement a startup migration seeding the initial `chunkSize` configuration entry (spec: job-configuration).
+- [x] `A1` Implement the `customer_records` document model and repository, including the "current version = highest version per id" query and the version-N+1 merge computation (ADR-0004).
+- [x] `A2` Implement the `staging_entries` document model and repository, with the fixed field set `jobId`, `rowId`, `rowData`, `errorDescription`, `processedAt` (ADR-0005).
+- [x] `A3` Implement the `import_jobs` document model and repository, including `idsInFile` and `summary` fields (design.md section 1.3).
+- [x] `A4.1` Implement the `job_configuration` document model and repository, including `valueType`-aware write-time validation (ADR-0007).
+- [x] `A4.2` Implement a startup migration seeding the initial `chunkSize` configuration entry (spec: job-configuration).
 
 ## Import capability (spec: import) — Group B
 
-- [ ] `B1` Implement `POST /api/v1/imports`: validate file path readability, persist the job record, compute `idsInFile`, submit to the managed executor, return `jobId` immediately (design.md section 3, steps 1-2).
-- [ ] `B2` Implement the id-set intersection serialization gate against running/queued-ahead jobs, preserving arrival order among intersecting jobs (ADR-0003).
-- [ ] `B3` Implement chunked row processing reading the current `chunkSize` configuration value per job start (design.md section 3, step 4).
-- [ ] `B4` Implement header-driven row parsing (no fixed column position assumption).
-- [ ] `B5` Implement email validation (simplified RFC 5322: `user@domain.tld`) and age validation (integer 0-120 inclusive).
-- [ ] `B5.1` Implement missing-field-value detection: an empty value under a recognized header column (`id`, `name`, `email`, `age`, `country`, `phone`) is treated as missing, distinct from an invalid-but-present value (`B5`) and from an unknown header column (`B6`).
-- [ ] `B6` Implement unknown-header-column detection and staging.
-- [ ] `B7` Implement invalid-field-value staging (email, age) and missing-field-value staging (empty value in a recognized column), each with an error description distinguishing "missing" from "invalid".
-- [ ] `B8` Implement successful-row persistence into `customer_records` via the ADR-0004 merge rule.
-- [ ] `B9` Implement job status transitions (`PENDING` → `RUNNING` → `COMPLETED`/`FAILED`) and final summary computation.
+- [x] `B1` Implement `POST /api/v1/imports`: validate file path readability, persist the job record, compute `idsInFile`, submit to the managed executor, return `jobId` immediately (design.md section 3, steps 1-2).
+- [x] `B2` Implement the id-set intersection serialization gate against running/queued-ahead jobs, preserving arrival order among intersecting jobs (ADR-0003).
+- [x] `B3` Implement chunked row processing reading the current `chunkSize` configuration value per job start (design.md section 3, step 4).
+- [x] `B4` Implement header-driven row parsing (no fixed column position assumption).
+- [x] `B5` Implement email validation (simplified RFC 5322: `user@domain.tld`) and age validation (integer 0-120 inclusive).
+- [x] `B5.1` Implement missing-field-value detection: an empty value under a recognized header column (`id`, `name`, `email`, `age`, `country`, `phone`) is treated as missing, distinct from an invalid-but-present value (`B5`) and from an unknown header column (`B6`).
+- [x] `B6` Implement unknown-header-column detection and staging.
+- [x] `B7` Implement invalid-field-value staging (email, age) and missing-field-value staging (empty value in a recognized column), each with an error description distinguishing "missing" from "invalid".
+- [x] `B8` Implement successful-row persistence into `customer_records` via the ADR-0004 merge rule.
+- [x] `B9` Implement job status transitions (`PENDING` → `RUNNING` → `COMPLETED`/`FAILED`) and final summary computation.
 
 ## Job status capability (spec: job-status) — Group B (same resource file as import)
 
-- [ ] `B10` Implement `GET /api/v1/imports/{jobId}` returning the numeric summary and the full staging entry list for that job.
+- [x] `B10` Implement `GET /api/v1/imports/{jobId}` returning the numeric summary and the full staging entry list for that job.
 
 ## Export capability (spec: export) — Group C
 
-- [ ] `C1` Implement `POST /api/v1/exports`: validate requested columns against the recognized schema, returning HTTP 400 naming the first/any invalid column on failure.
-- [ ] `C2` Implement the "current version per distinct id" query feeding the export projection.
-- [ ] `C3` Implement CSV and TXT writers honoring exact requested column order.
-- [ ] `C4` Implement XLSX (Office Open XML) writer honoring exact requested column order.
-- [ ] `C5` Reject the legacy XLS format explicitly (unsupported-format error, not a silent fallback).
+- [x] `C1` Implement `POST /api/v1/exports`: validate requested columns against the recognized schema, returning HTTP 400 naming the first/any invalid column on failure.
+- [x] `C2` Implement the "current version per distinct id" query feeding the export projection.
+- [x] `C3` Implement CSV and TXT writers honoring exact requested column order.
+- [x] `C4` Implement XLSX (Office Open XML) writer honoring exact requested column order.
+- [x] `C5` Reject the legacy XLS format explicitly (unsupported-format error, not a silent fallback).
 
 ## Job configuration capability (spec: job-configuration) — Group D
 
-- [ ] `D1` Implement `GET /api/v1/job-configurations`, `GET /{key}`, `POST`, `PUT /{key}`, `DELETE /{key}` per design.md section 2.
-- [ ] `D2` Implement `valueType`-consistent parsing on both write (validation) and read (typed consumption by the chunking logic).
+- [x] `D1` Implement `GET /api/v1/job-configurations`, `GET /{key}`, `POST`, `PUT /{key}`, `DELETE /{key}` per design.md section 2.
+- [x] `D2` Implement `valueType`-consistent parsing on both write (validation) and read (typed consumption by the chunking logic).
 
 ## Authentication capability (spec: authentication) — Group E
 
-- [ ] `E1` Configure `quarkus-oidc` as a resource server protecting all `/api/v1/**` endpoints.
-- [ ] `E2` Configure Quarkus Dev Services for Keycloak with a realm/client supporting the `client_credentials` grant for local/dev/test runs.
-- [ ] `E3` Confirm (and document, for the Technical Writer) whether the Dev-Services-managed realm's client issues a refresh token for the Client Credentials grant by default, or whether explicit realm/client configuration is needed (ADR-0006, Consequences).
+- [x] `E1` Configure `quarkus-oidc` as a resource server protecting all `/api/v1/**` endpoints.
+- [x] `E2` Configure Quarkus Dev Services for Keycloak with a realm/client supporting the `client_credentials` grant for local/dev/test runs.
+- [x] `E3` Confirm (and document, for the Technical Writer) whether the Dev-Services-managed realm's client issues a refresh token for the Client Credentials grant by default, or whether explicit realm/client configuration is needed (ADR-0006, Consequences).
 
 ## Cross-cutting — Group F
 
-- [ ] `F1` Integration tests covering every scenario in `docs/requirements/acceptance-criteria.feature` and every scenario in each `specs/<capability>/spec.md` file under this change.
-- [ ] `F2` Unit tests for the id-intersection gate (ADR-0003), the version-merge computation (ADR-0004), and the email/age validators.
-- [ ] `F3` Confirm `./gradlew build` and `./gradlew test` pass, including Dev-Services-dependent tests (requires Docker available in the environment/CI — a DevOps/Platform Engineer precondition, see ADR-0006 Confirmation).
+- [x] `F1` Integration tests covering every scenario in `docs/requirements/acceptance-criteria.feature` and every scenario in each `specs/<capability>/spec.md` file under this change.
+- [x] `F2` Unit tests for the id-intersection gate (ADR-0003), the version-merge computation (ADR-0004), and the email/age validators.
+- [x] `F3` Confirm `./gradlew build` and `./gradlew test` pass, including Dev-Services-dependent tests (requires Docker available in the environment/CI — a DevOps/Platform Engineer precondition, see ADR-0006 Confirmation). Verified: `./gradlew clean test --no-daemon` — BUILD SUCCESSFUL, 213 tests, 0 failures, 0 errors, 0 skipped, including `AuthenticationIT#tokenResponse_refreshTokenFieldPresent` asserting refresh_token presence per the ADR-0006 configuration fix.
 
 ## Documentation handoff — Group G
 
-- [ ] `G1` Technical Writer: document the OAuth2 token-acquisition flow, the job configuration API, and the staging-entry model for API consumers, based on this design and its ADRs (not invented independently).
-- [ ] `G2` DevOps/Platform Engineer: confirm CI runners have Docker available for Dev Services-backed tests, and document the local prerequisite (Docker) for running `quarkusDev`/`test`.
+- [x] `G1` Technical Writer: document the OAuth2 token-acquisition flow, the job configuration API, and the staging-entry model for API consumers, based on this design and its ADRs (not invented independently). Done in `README.md` ("How to use the services" section: token acquisition example, job configuration CRUD examples; "Import flow" step 4/7 and the `GET /api/v1/imports/{jobId}` example: full staging-entry field shape) plus the generated OpenAPI/Swagger UI (`/q/swagger-ui`) and the Postman Collection (`postman/planet-import-export.postman_collection.json`), which both cover the same three concerns interactively.
+- [x] `G2` DevOps/Platform Engineer: confirm CI runners have Docker available for Dev Services-backed tests, and document the local prerequisite (Docker) for running `quarkusDev`/`test`. Local prerequisite documented in `README.md` ("Prerequisites and running the project"). CI-runner confirmation: this repository defines no CI pipeline as of this writing (no `.github/workflows` or other CI config found) — there is no runner to confirm Docker availability on. This is noted in `README.md` as a "CI note" so a future CI setup carries the same Docker/Podman requirement forward.
 
 ## Execution instructions (dependency map for `plinth-tech-lead`)
 

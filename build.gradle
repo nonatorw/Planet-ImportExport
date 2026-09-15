@@ -1,0 +1,79 @@
+plugins {
+    id 'java'
+    id 'io.quarkus'
+    id 'com.diffplug.spotless' version "8.10.2"
+}
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+dependencies {
+    implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
+    implementation 'io.quarkus:quarkus-rest'
+    implementation 'io.quarkus:quarkus-rest-jackson'
+    implementation 'io.quarkus:quarkus-hibernate-validator'
+    implementation 'io.quarkus:quarkus-mongodb-panache'
+    implementation 'io.quarkus:quarkus-oidc'
+    implementation 'io.quarkus:quarkus-smallrye-openapi'
+    implementation 'io.quarkus:quarkus-arc'
+    implementation 'io.quarkus:quarkus-config-yaml'
+
+    // ADR-0001: embedded in-memory MongoDB (Flapdoodle) — no external database infrastructure.
+    // Used both at quarkusDev runtime and in @QuarkusTest via a QuarkusTestResourceLifecycleManager.
+    implementation 'de.flapdoodle.embed:de.flapdoodle.embed.mongo:4.20.0'
+
+    // Approved dependency (AGENTS.md boundary: "Ask first: Adding new dependencies"). Used by the
+    // Group C (Export) XLSX/Office Open XML writer (task C4; design.md section 4 step 3:
+    // "POI-based (or equivalent) writer").
+    implementation 'org.apache.poi:poi-ooxml:5.3.0'
+
+    testImplementation 'io.quarkus:quarkus-junit'
+    testImplementation 'io.rest-assured:rest-assured'
+    testImplementation 'org.assertj:assertj-core:3.26.3'
+}
+
+group = 'com.planet'
+version = '1.0.0-SNAPSHOT'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+
+compileJava {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << '-parameters'
+}
+
+compileTestJava {
+    options.encoding = 'UTF-8'
+}
+
+spotless {
+    java {
+        removeUnusedImports()
+        importOrder(
+            'java',
+            'javafx',
+            'javax',
+            'jakarta',
+            '',
+            'com.planet',
+            '',
+            'org',
+            'io',
+            'com',
+            'net',
+            'dev',
+            'de',
+            '',
+            '\\#'
+        )
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
+
+check.dependsOn 'spotlessCheck'
