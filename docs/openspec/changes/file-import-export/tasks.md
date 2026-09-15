@@ -56,9 +56,9 @@ Group convention: tasks sharing the same group id are done by the **same** agent
 
 ## Cross-cutting — Group F
 
-- [ ] `F1` Integration tests covering every scenario in `docs/requirements/acceptance-criteria.feature` and every scenario in each `specs/<capability>/spec.md` file under this change.
-- [ ] `F2` Unit tests for the id-intersection gate (ADR-0003), the version-merge computation (ADR-0004), and the email/age validators.
-- [ ] `F3` Confirm `./gradlew build` and `./gradlew test` pass, including Dev-Services-dependent tests (requires Docker available in the environment/CI — a DevOps/Platform Engineer precondition, see ADR-0006 Confirmation).
+- [x] `F1` Integration tests covering every scenario in `docs/requirements/acceptance-criteria.feature` and every scenario in each `specs/<capability>/spec.md` file under this change.
+- [x] `F2` Unit tests for the id-intersection gate (ADR-0003), the version-merge computation (ADR-0004), and the email/age validators.
+- [x] `F3` Confirm `./gradlew build` and `./gradlew test` pass, including Dev-Services-dependent tests (requires Docker available in the environment/CI — a DevOps/Platform Engineer precondition, see ADR-0006 Confirmation). Verified: `./gradlew clean test --no-daemon` — BUILD SUCCESSFUL, 213 tests, 0 failures, 0 errors, 0 skipped, including `AuthenticationIT#tokenResponse_refreshTokenFieldPresent` asserting refresh_token presence per the ADR-0006 configuration fix.
 
 ## Documentation handoff — Group G
 

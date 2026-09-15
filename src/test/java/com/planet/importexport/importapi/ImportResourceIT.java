@@ -1,20 +1,14 @@
 package com.planet.importexport.importapi;
 
-import static io.restassured.RestAssured.given;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import jakarta.inject.Inject;
 
 import com.planet.importexport.authapi.support.BearerTokenTestSupport;
 import com.planet.importexport.customerrecord.CustomerRecordRepository;
@@ -25,11 +19,20 @@ import com.planet.importexport.jobconfig.JobConfigurationValueType;
 import com.planet.importexport.mongo.FlapdoodleMongoTestResource;
 import com.planet.importexport.staging.StagingEntryRepository;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
-import jakarta.inject.Inject;
+
+import static io.restassured.RestAssured.given;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 
 /**
  * End-to-end integration tests for {@code POST /api/v1/imports} ({@code B1})
@@ -211,6 +214,29 @@ class ImportResourceIT {
     }
 
     @Test
+    void stagingEntry_exposesAllFiveRequiredFieldsViaHttp() throws Exception {
+        Path file =
+                writeCsv("""
+                         id,name,phone,email,age,country
+                         7,Staged Customer,+35190000000,not-an-email,45,Portugal
+                         """);
+
+        String jobId = submitAndGetJobId(file);
+        waitForTerminalStatus(jobId);
+
+        authenticatedRequest().when()
+               .get("/api/v1/imports/" + jobId)
+               .then()
+               .statusCode(200)
+               .body("summary.failed", equalTo(1))
+               .body("stagingErrors[0].jobId", equalTo(jobId))
+               .body("stagingErrors[0].rowId", equalTo(1))
+               .body("stagingErrors[0].rowData.id", equalTo("7"))
+               .body("stagingErrors[0].errorDescription", notNullValue())
+               .body("stagingErrors[0].processedAt", notNullValue());
+    }
+
+    @Test
     void unknownHeaderColumn_isStagedWithDescriptionMentioningColumnName() throws Exception {
         Path file =
                 writeCsv("""
@@ -251,6 +277,54 @@ class ImportResourceIT {
     }
 
     @Test
+    void fiveRowFileWithChunkSizeTwo_processesAllThreeChunksToCompletion() throws Exception {
+        Path file =
+                writeCsv("""
+                         id,name,email,age,country
+                         1,Alice One,alice1@example.com,30,Portugal
+                         2,Alice Two,alice2@example.com,31,Spain
+                         3,Alice Three,alice3@example.com,32,France
+                         4,Alice Four,alice4@example.com,33,Italy
+                         5,Alice Five,alice5@example.com,34,Germany
+                         """);
+
+        String jobId = submitAndGetJobId(file);
+        waitForTerminalStatus(jobId);
+
+        authenticatedRequest().when()
+               .get("/api/v1/imports/" + jobId)
+               .then()
+               .statusCode(200)
+               .body("status", equalTo("COMPLETED"))
+               .body("summary.totalRows", equalTo(5))
+               .body("summary.succeeded", equalTo(5))
+               .body("summary.failed", equalTo(0));
+
+        for (int recordId = 1; recordId <= 5; recordId++) {
+            assertThat(customerRecordRepository.findCurrentVersion(String.valueOf(recordId)))
+                    .isPresent();
+        }
+    }
+
+    @Test
+    void largeFileWithSeveralHundredRows_isAcceptedAndCompletesWithMatchingTotalRows() throws Exception {
+        int rowCount = 300;
+        Path file = writeCsv(generateValidRows(rowCount));
+
+        String jobId = submitAndGetJobId(file);
+        waitForTerminalStatus(jobId);
+
+        authenticatedRequest().when()
+               .get("/api/v1/imports/" + jobId)
+               .then()
+               .statusCode(200)
+               .body("status", equalTo("COMPLETED"))
+               .body("summary.totalRows", equalTo(rowCount))
+               .body("summary.succeeded", equalTo(rowCount))
+               .body("summary.failed", equalTo(0));
+    }
+
+    @Test
     void disjointIdJobsBothCompleteSuccessfully() throws Exception {
         Path fileA = writeCsv("id,name,email,age,country\n1,Alice,alice@example.com,30,Portugal\n");
         Path fileB = writeCsv("id,name,email,age,country\n2,Bob,bob@example.com,40,Spain\n");
@@ -277,7 +351,10 @@ class ImportResourceIT {
     }
 
     private void waitForTerminalStatus(String jobId) throws InterruptedException {
-        long deadline = System.currentTimeMillis() + 10_000;
+        // 30s accommodates the large-file test (several hundred rows chunked at chunkSize=2,
+        // i.e. ~150 chunks) as well as the small fixed-row-count tests, which complete well
+        // within this budget in the common case.
+        long deadline = System.currentTimeMillis() + 30_000;
 
         while (System.currentTimeMillis() < deadline) {
             String status = authenticatedRequest().when()
@@ -301,6 +378,26 @@ class ImportResourceIT {
         Files.writeString(file, content);
 
         return file;
+    }
+
+    /**
+     * Generates a CSV document (header plus {@code rowCount} data rows) with
+     * distinct, entirely valid values per row, used to prove there is no
+     * undocumented size/row-count rejection ceiling on the import endpoint.
+     *
+     * @param rowCount the number of valid data rows to generate, each with a
+     *                 unique {@code id}
+     * @return the full CSV content, header included
+     */
+    private String generateValidRows(int rowCount) {
+        String header = "id,name,email,age,country";
+
+        String rows = IntStream.rangeClosed(1, rowCount)
+                              .mapToObj(rowNumber -> "%d,Customer %d,customer%d@example.com,%d,Portugal"
+                                      .formatted(rowNumber, rowNumber, rowNumber, 20 + (rowNumber % 50)))
+                              .collect(Collectors.joining("\n"));
+
+        return header + "\n" + rows + "\n";
     }
 
     private String escape(Path path) {

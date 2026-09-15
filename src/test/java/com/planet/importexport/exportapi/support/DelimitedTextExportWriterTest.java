@@ -1,11 +1,11 @@
 package com.planet.importexport.exportapi.support;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /** Unit tests for {@link DelimitedTextExportWriter} (task C3). */
 class DelimitedTextExportWriterTest {

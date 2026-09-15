@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'io.quarkus'
+    id 'com.diffplug.spotless' version "8.10.2"
 }
 
 repositories {
@@ -16,6 +17,7 @@ dependencies {
     implementation 'io.quarkus:quarkus-mongodb-panache'
     implementation 'io.quarkus:quarkus-oidc'
     implementation 'io.quarkus:quarkus-arc'
+    implementation 'io.quarkus:quarkus-config-yaml'
 
     // ADR-0001: embedded in-memory MongoDB (Flapdoodle) — no external database infrastructure.
     // Used both at quarkusDev runtime and in @QuarkusTest via a QuarkusTestResourceLifecycleManager.
@@ -47,3 +49,30 @@ compileJava {
 compileTestJava {
     options.encoding = 'UTF-8'
 }
+
+spotless {
+    java {
+        removeUnusedImports()
+        importOrder(
+            'java',
+            'javafx',
+            'javax',
+            'jakarta',
+            '',
+            'com.planet',
+            '',
+            'org',
+            'io',
+            'com',
+            'net',
+            'dev',
+            'de',
+            '',
+            '\\#'
+        )
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
+
+check.dependsOn 'spotlessCheck'

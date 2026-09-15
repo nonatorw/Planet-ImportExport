@@ -1,17 +1,18 @@
 package com.planet.importexport.customerrecord;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.util.Map;
+
+import jakarta.inject.Inject;
+
+import com.planet.importexport.mongo.FlapdoodleMongoTestResource;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import com.planet.importexport.mongo.FlapdoodleMongoTestResource;
-
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Integration test for

@@ -1,7 +1,5 @@
 package com.planet.importexport.importapi.support;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -12,6 +10,8 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Unit tests for {@link JobIntersectionGate} (ADR-0003; {@code B2}):

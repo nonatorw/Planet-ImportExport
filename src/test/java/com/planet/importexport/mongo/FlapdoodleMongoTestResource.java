@@ -2,12 +2,13 @@ package com.planet.importexport.mongo;
 
 import java.util.Map;
 
+import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
+
 import de.flapdoodle.embed.mongo.commands.ServerAddress;
 import de.flapdoodle.embed.mongo.distribution.Version;
 import de.flapdoodle.embed.mongo.transitions.Mongod;
 import de.flapdoodle.embed.mongo.transitions.RunningMongodProcess;
 import de.flapdoodle.reverse.TransitionWalker;
-import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 
 /**
  * Starts an embedded, in-memory MongoDB instance (Flapdoodle) for
@@ -17,7 +18,7 @@ import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
  *
  * <p>Quarkus MongoDB Dev Services is disabled
  * ({@code quarkus.mongodb.devservices.enabled=false}, see
- * {@code application.properties}) so this resource is the sole source of the
+ * {@code application.yml}) so this resource is the sole source of the
  * test-time connection string.
  *
  * <p>Flapdoodle's OS detection ({@code de.flapdoodle.os}) ships a fixed table
@@ -39,6 +40,8 @@ public class FlapdoodleMongoTestResource
             "de.flapdoodle.os.override";
     private static final String OS_OVERRIDE_VALUE =
             "Linux|X86_64|Ubuntu|Ubuntu_25_10";
+    private static final String MONGODB_CONNECTION_STRING_PROPERTY =
+            "quarkus.mongodb.connection-string";
 
     private TransitionWalker.ReachedState<RunningMongodProcess> runningMongod;
 
@@ -52,10 +55,11 @@ public class FlapdoodleMongoTestResource
 
         ServerAddress serverAddress = runningMongod.current()
                                                    .getServerAddress();
+
         String connectionString = "mongodb://" + serverAddress.getHost() +
                                   ":" + serverAddress.getPort();
 
-        return Map.of("quarkus.mongodb.connection-string",
+        return Map.of(MONGODB_CONNECTION_STRING_PROPERTY,
                       connectionString);
     }
 

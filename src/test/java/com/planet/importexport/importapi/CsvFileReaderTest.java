@@ -1,7 +1,5 @@
 package com.planet.importexport.importapi;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -9,13 +7,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import com.planet.importexport.importapi.model.CsvRow;
+import com.planet.importexport.importapi.support.CsvFileReader;
+import com.planet.importexport.importapi.support.CsvHeaderReader;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.planet.importexport.importapi.model.CsvRow;
-import com.planet.importexport.importapi.support.CsvFileReader;
-import com.planet.importexport.importapi.support.CsvHeaderReader;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /** Unit tests for {@link CsvFileReader} and {@link CsvHeaderReader}
  * ({@code B3}, {@code B4}).

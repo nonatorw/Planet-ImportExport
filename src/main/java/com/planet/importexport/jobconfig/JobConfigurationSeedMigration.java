@@ -3,12 +3,13 @@ package com.planet.importexport.jobconfig;
 import java.time.Clock;
 import java.time.Instant;
 
-import org.jboss.logging.Logger;
-
-import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
+
+import org.jboss.logging.Logger;
+
+import io.quarkus.runtime.StartupEvent;
 
 /**
  * Seeds the initial {@code chunkSize} job configuration entry at application

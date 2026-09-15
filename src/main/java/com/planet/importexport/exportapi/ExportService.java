@@ -3,6 +3,9 @@ package com.planet.importexport.exportapi;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+
 import com.planet.importexport.customerrecord.CustomerRecordDocument;
 import com.planet.importexport.customerrecord.CustomerRecordRepository;
 import com.planet.importexport.exportapi.exception.UnknownExportColumnException;
@@ -12,9 +15,6 @@ import com.planet.importexport.exportapi.support.DelimitedTextExportWriter;
 import com.planet.importexport.exportapi.support.ExportRowProjector;
 import com.planet.importexport.exportapi.support.XlsxExportWriter;
 import com.planet.importexport.exportapi.validator.ExportColumnValidator;
-
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 /**
  * Orchestrates the export flow (design.md section 4): validate the requested

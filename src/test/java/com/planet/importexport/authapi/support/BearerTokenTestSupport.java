@@ -1,8 +1,8 @@
 package com.planet.importexport.authapi.support;
 
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
 import jakarta.enterprise.context.ApplicationScoped;
+
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * CDI-injectable test helper that resolves a fresh OAuth2 access token from
@@ -35,7 +35,7 @@ public class BearerTokenTestSupport {
      */
     public static final String DEV_SERVICES_CLIENT_SECRET = "secret";
 
-    @ConfigProperty(name = "quarkus.oidc.auth-server-url")
+    @ConfigProperty(name = KeycloakTokenClient.AUTH_SERVER_URL_PROPERTY)
     String authServerUrl;
 
     /**
@@ -44,7 +44,7 @@ public class BearerTokenTestSupport {
      */
     public String obtainAccessToken() {
         return KeycloakTokenClient.obtainAccessToken(authServerUrl,
-                                                      DEV_SERVICES_CLIENT_ID,
-                                                      DEV_SERVICES_CLIENT_SECRET);
+                                                     DEV_SERVICES_CLIENT_ID,
+                                                     DEV_SERVICES_CLIENT_SECRET);
     }
 }

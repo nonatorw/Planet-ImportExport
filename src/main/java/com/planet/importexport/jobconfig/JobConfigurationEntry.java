@@ -3,9 +3,9 @@ package com.planet.importexport.jobconfig;
 import java.time.Instant;
 import java.util.Objects;
 
-import org.bson.codecs.pojo.annotations.BsonId;
-
 import com.planet.importexport.jobconfig.exception.InvalidJobConfigurationValueException;
+
+import org.bson.codecs.pojo.annotations.BsonId;
 
 import io.quarkus.mongodb.panache.common.MongoEntity;
 

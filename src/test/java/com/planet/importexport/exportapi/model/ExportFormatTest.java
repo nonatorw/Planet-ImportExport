@@ -1,14 +1,14 @@
 package com.planet.importexport.exportapi.model;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import com.planet.importexport.exportapi.exception.UnsupportedExportFormatException;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import com.planet.importexport.exportapi.exception.UnsupportedExportFormatException;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Unit tests for {@link ExportFormat#fromRequestValue(String)} (tasks C1, C5). */
 class ExportFormatTest {

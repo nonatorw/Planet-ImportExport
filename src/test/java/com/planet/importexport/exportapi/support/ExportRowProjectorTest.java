@@ -1,14 +1,14 @@
 package com.planet.importexport.exportapi.support;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+import com.planet.importexport.customerrecord.CustomerRecordDocument;
+
 import org.junit.jupiter.api.Test;
 
-import com.planet.importexport.customerrecord.CustomerRecordDocument;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Unit tests for {@link ExportRowProjector} (task C3/C4 shared projection

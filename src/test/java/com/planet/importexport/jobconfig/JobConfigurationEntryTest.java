@@ -1,13 +1,13 @@
 package com.planet.importexport.jobconfig;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import java.time.Instant;
+
+import com.planet.importexport.jobconfig.exception.InvalidJobConfigurationValueException;
 
 import org.junit.jupiter.api.Test;
 
-import com.planet.importexport.jobconfig.exception.InvalidJobConfigurationValueException;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Pure unit tests proving the {@link JobConfigurationEntry} constructor itself

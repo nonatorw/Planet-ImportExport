@@ -9,7 +9,8 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.jboss.logging.Logger;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 import com.planet.importexport.customerrecord.CustomerRecordRepository;
 import com.planet.importexport.importapi.exception.FileNotReadableException;
@@ -28,8 +29,7 @@ import com.planet.importexport.jobconfig.JobConfigurationRepository;
 import com.planet.importexport.staging.StagingEntry;
 import com.planet.importexport.staging.StagingEntryRepository;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
+import org.jboss.logging.Logger;
 
 /**
  * Orchestrates the whole import processing flow (design.md section 3):

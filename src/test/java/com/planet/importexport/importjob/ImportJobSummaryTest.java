@@ -1,8 +1,8 @@
 package com.planet.importexport.importjob;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** Pure unit test for the {@code import_jobs.summary} value object (design.md section 1.3). */
 class ImportJobSummaryTest {

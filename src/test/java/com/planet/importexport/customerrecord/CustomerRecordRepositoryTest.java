@@ -1,27 +1,29 @@
 package com.planet.importexport.customerrecord;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import jakarta.inject.Inject;
+
+import com.planet.importexport.mongo.FlapdoodleMongoTestResource;
+
 import org.bson.Document;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import com.mongodb.ErrorCategory;
-import com.mongodb.MongoWriteException;
-import com.planet.importexport.mongo.FlapdoodleMongoTestResource;
-
 import io.quarkus.panache.common.Sort;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
+
+import com.mongodb.ErrorCategory;
+import com.mongodb.MongoWriteException;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Integration test proving {@link CustomerRecordRepository} persistence and

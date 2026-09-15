@@ -44,9 +44,10 @@ public enum ExportFormat {
         String normalized = requestedFormat.trim()
                                            .toUpperCase(Locale.ROOT);
 
-        Optional<ExportFormat> match = Arrays.stream(values())
-                                             .filter(format -> format.name().equals(normalized))
-                                             .findFirst();
+        Optional<ExportFormat> match =
+                Arrays.stream(values())
+                      .filter(format -> format.name().equals(normalized))
+                      .findFirst();
 
         // Covers "XLS" explicitly as well as any other unrecognized format
         // token; both are reported identically as "unsupported format"

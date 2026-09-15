@@ -1,15 +1,15 @@
 package com.planet.importexport.importapi.validator;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.junit.jupiter.api.Test;
-
 import com.planet.importexport.importapi.model.CsvRow;
 import com.planet.importexport.importapi.model.RowOutcome;
+
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Unit tests for {@link ImportRowValidator} covering {@code B4}-{@code B6}:

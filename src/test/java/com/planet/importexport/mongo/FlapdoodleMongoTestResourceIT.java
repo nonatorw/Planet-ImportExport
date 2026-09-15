@@ -1,15 +1,16 @@
 package com.planet.importexport.mongo;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import jakarta.inject.Inject;
 
 import org.bson.Document;
 import org.junit.jupiter.api.Test;
 
-import com.mongodb.client.MongoClient;
-
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
+
+import com.mongodb.client.MongoClient;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Scaffolding-level smoke test (Group A0.2): confirms the Flapdoodle-backed

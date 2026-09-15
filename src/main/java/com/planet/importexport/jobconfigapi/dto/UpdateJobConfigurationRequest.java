@@ -1,8 +1,8 @@
 package com.planet.importexport.jobconfigapi.dto;
 
-import com.planet.importexport.jobconfig.JobConfigurationValueType;
-
 import jakarta.validation.constraints.NotNull;
+
+import com.planet.importexport.jobconfig.JobConfigurationValueType;
 
 /**
  * Request body for {@code PUT /api/v1/job-configurations/{key}} (design.md section 2). {@code

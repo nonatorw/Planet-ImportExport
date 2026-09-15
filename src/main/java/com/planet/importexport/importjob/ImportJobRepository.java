@@ -5,9 +5,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import jakarta.enterprise.context.ApplicationScoped;
+
 import io.quarkus.mongodb.panache.PanacheMongoRepositoryBase;
 import io.quarkus.panache.common.Sort;
-import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * Repository for the {@code import_jobs} collection (design.md section 1.3;

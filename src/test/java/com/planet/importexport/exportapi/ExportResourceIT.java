@@ -1,24 +1,25 @@
 package com.planet.importexport.exportapi;
 
-import static io.restassured.RestAssured.given;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-
 import java.util.Map;
 
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
+import jakarta.inject.Inject;
 
 import com.planet.importexport.authapi.support.BearerTokenTestSupport;
 import com.planet.importexport.customerrecord.CustomerRecordRepository;
 import com.planet.importexport.mongo.FlapdoodleMongoTestResource;
 
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
-import jakarta.inject.Inject;
+
+import static io.restassured.RestAssured.given;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 
 /**
  * Integration test for {@code POST /api/v1/exports} (task C1-C5;
@@ -30,6 +31,15 @@ import jakarta.inject.Inject;
  * Keycloak realm via {@link BearerTokenTestSupport} — see
  * {@code AuthenticationIT} for the dedicated 401/200 authentication-scenario
  * coverage.</p>
+ *
+ * <p>{@code exportCsv_requestedOrderEmailIdName_honoredOverNaturalStorageOrder}
+ * and {@code exportCsv_requestedOrderCountryName_honoredOverNaturalStorageOrder}
+ * cover both example rows of {@code docs/requirements/acceptance-criteria.feature}'s
+ * Scenario Outline "Requested column order is honored regardless of storage
+ * order" (columns {@code ["email","id","name"]} and {@code ["country","name"]}
+ * respectively), each seeding fields in the natural recognized-schema order
+ * ({@code id, name, email, age, country, phone}) so the assertion proves
+ * reordering, not a coincidental match with storage order.</p>
  */
 @QuarkusTest
 @QuarkusTestResource(FlapdoodleMongoTestResource.class)
@@ -122,6 +132,58 @@ class ExportResourceIT {
                             .getCell(1)
                             .getStringCellValue()).isEqualTo("John Smith");
         }
+    }
+
+    @Test
+    void exportCsv_requestedOrderEmailIdName_honoredOverNaturalStorageOrder() {
+        repository.insertNextVersion(
+                "1",
+                Map.of("name", "John Smith",
+                       "email", "john@example.com",
+                       "age", "35",
+                       "country", "Portugal"),
+                "job-1");
+
+        String body = authenticatedRequest().contentType(ContentType.JSON)
+                             .body("""
+                                   {"format":"CSV","columns":["email","id","name"]}
+                                   """)
+                             .when()
+                             .post("/api/v1/exports")
+                             .then()
+                             .statusCode(200)
+                             .contentType("text/csv")
+                             .extract()
+                             .asString();
+
+        assertThat(body)
+                 .isEqualTo("email,id,name\r\njohn@example.com,1,John Smith\r\n");
+    }
+
+    @Test
+    void exportCsv_requestedOrderCountryName_honoredOverNaturalStorageOrder() {
+        repository.insertNextVersion(
+                "1",
+                Map.of("name", "John Smith",
+                       "email", "john@example.com",
+                       "age", "35",
+                       "country", "Portugal"),
+                "job-1");
+
+        String body = authenticatedRequest().contentType(ContentType.JSON)
+                             .body("""
+                                   {"format":"CSV","columns":["country","name"]}
+                                   """)
+                             .when()
+                             .post("/api/v1/exports")
+                             .then()
+                             .statusCode(200)
+                             .contentType("text/csv")
+                             .extract()
+                             .asString();
+
+        assertThat(body)
+                 .isEqualTo("country,name\r\nPortugal,John Smith\r\n");
     }
 
     @Test

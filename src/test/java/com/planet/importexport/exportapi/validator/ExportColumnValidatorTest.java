@@ -1,14 +1,14 @@
 package com.planet.importexport.exportapi.validator;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import java.util.List;
+
+import com.planet.importexport.exportapi.exception.UnknownExportColumnException;
 
 import org.junit.jupiter.api.Test;
 
-import com.planet.importexport.exportapi.exception.UnknownExportColumnException;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Unit tests for {@link ExportColumnValidator} (task C1). */
 class ExportColumnValidatorTest {

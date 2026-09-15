@@ -7,15 +7,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.bson.Document;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
 
-import com.mongodb.client.model.IndexOptions;
+import org.bson.Document;
 
 import io.quarkus.mongodb.panache.PanacheMongoRepository;
 import io.quarkus.panache.common.Sort;
 import io.quarkus.runtime.StartupEvent;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Observes;
+
+import com.mongodb.client.model.IndexOptions;
 
 /**
  * Repository for the {@code customer_records} collection (design.md section

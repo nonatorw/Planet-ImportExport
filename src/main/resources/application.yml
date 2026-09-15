@@ -1,0 +1,90 @@
+# File Import and Export Service
+# See docs/adr/ADR-0001 (storage) and docs/adr/ADR-0006 (authentication) for the rationale behind
+# the MongoDB and OIDC configuration below.
+
+# --- MongoDB (ADR-0001) ---------------------------------------------------
+# Storage is embedded in-memory MongoDB via Flapdoodle, not a containerized Dev Services instance.
+# Quarkus MongoDB Dev Services is disabled everywhere; the Flapdoodle-backed connection string is
+# supplied instead (at %dev/%test runtime via a startup hook / QuarkusTestResourceLifecycleManager,
+# both implementation detail for Group A1-A4, not this scaffolding group).
+quarkus:
+  mongodb:
+    devservices:
+      enabled: false
+    database: importexport
+
+  # --- OIDC / Keycloak Dev Services (ADR-0006) ------------------------------
+  # quarkus-oidc is configured as a resource server. Quarkus Dev Services for Keycloak auto-provisions
+  # a Keycloak container plus a preconfigured realm/client for quarkusDev and @QuarkusTest runs, so no
+  # auth-server-url/client-id/client-secret is hardcoded here for %dev/%test.
+  # Every /api/v1/** resource class is @Authenticated (Group E, tasks E1-E3): ImportResource,
+  # ExportResource, and JobConfigurationResource all require a valid OIDC bearer token.
+  oidc:
+    tenant-enabled: true
+
+"%dev":
+  quarkus:
+    keycloak:
+      devservices:
+        enabled: true
+        # E2/E3 (ADR-0006, "More Information": "if Dev Services' default realm configuration does not
+        # issue refresh tokens for Client Credentials out of the box, that is an implementation-time
+        # configuration adjustment, not a new architectural decision"): Quarkus Dev Services for Keycloak's
+        # built-in default realm/client ("quarkus" / "quarkus-app" / secret "secret") only assigns
+        # ["microprofile-jwt", "basic"] as default client scopes and does not enable Keycloak's
+        # "OpenID Connect Compatibility Modes" > "Use Refresh Tokens For Client Credentials Grant" client
+        # attribute, so Keycloak does not mint a refresh_token for the client_credentials grant out of the
+        # box (RFC 6749 does not mandate one for this grant, and Keycloak omits it by default accordingly).
+        # Per ADR-0006, this is fixed here (not merely documented as absent) via a custom Dev-Services
+        # realm-export that keeps the same realm name/client id/secret but (a) sets the client attribute
+        # "client_credentials.use_refresh_token": "true" — the actual Keycloak switch that makes
+        # client_credentials return a refresh_token — and (b) adds "offline_access" as a DEFAULT (not
+        # optional) client scope on "quarkus-app" so the issued refresh_token is a long-lived offline token
+        # consistent with a machine-to-machine credential. Confirmed empirically (see
+        # src/main/resources/quarkus-realm.json and
+        # AuthenticationIT#tokenResponse_refreshTokenFieldPresent) that "offline_access" alone is NOT
+        # sufficient — the compatibility-mode client attribute is what actually triggers refresh_token
+        # issuance for this grant.
+        # File is named "quarkus-realm.json" (not an arbitrary name) because Keycloak's own
+        # directory-based realm importer requires the file name to match "<realm-name>-realm.json"
+        # (confirmed empirically: Keycloak refused to start with a mismatched file name, logging
+        # "File name / realm name mismatch... File name should be quarkus-realm.json").
+        realm-path: quarkus-realm.json
+
+"%test":
+  quarkus:
+    keycloak:
+      devservices:
+        enabled: true
+        # E2/E3 (ADR-0006, "More Information": "if Dev Services' default realm configuration does not
+        # issue refresh tokens for Client Credentials out of the box, that is an implementation-time
+        # configuration adjustment, not a new architectural decision"): Quarkus Dev Services for Keycloak's
+        # built-in default realm/client ("quarkus" / "quarkus-app" / secret "secret") only assigns
+        # ["microprofile-jwt", "basic"] as default client scopes and does not enable Keycloak's
+        # "OpenID Connect Compatibility Modes" > "Use Refresh Tokens For Client Credentials Grant" client
+        # attribute, so Keycloak does not mint a refresh_token for the client_credentials grant out of the
+        # box (RFC 6749 does not mandate one for this grant, and Keycloak omits it by default accordingly).
+        # Per ADR-0006, this is fixed here (not merely documented as absent) via a custom Dev-Services
+        # realm-export that keeps the same realm name/client id/secret but (a) sets the client attribute
+        # "client_credentials.use_refresh_token": "true" — the actual Keycloak switch that makes
+        # client_credentials return a refresh_token — and (b) adds "offline_access" as a DEFAULT (not
+        # optional) client scope on "quarkus-app" so the issued refresh_token is a long-lived offline token
+        # consistent with a machine-to-machine credential. Confirmed empirically (see
+        # src/main/resources/quarkus-realm.json and
+        # AuthenticationIT#tokenResponse_refreshTokenFieldPresent) that "offline_access" alone is NOT
+        # sufficient — the compatibility-mode client attribute is what actually triggers refresh_token
+        # issuance for this grant.
+        # File is named "quarkus-realm.json" (not an arbitrary name) because Keycloak's own
+        # directory-based realm importer requires the file name to match "<realm-name>-realm.json"
+        # (confirmed empirically: Keycloak refused to start with a mismatched file name, logging
+        # "File name / realm name mismatch... File name should be quarkus-realm.json").
+        realm-path: quarkus-realm.json
+
+# Production must not rely on Dev Services; explicit values are required before a prod deployment.
+"%prod":
+  quarkus:
+    oidc:
+      auth-server-url: ${OIDC_AUTH_SERVER_URL:}
+      client-id: ${OIDC_CLIENT_ID:}
+      credentials:
+        secret: ${OIDC_CLIENT_SECRET:}

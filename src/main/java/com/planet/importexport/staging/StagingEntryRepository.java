@@ -2,13 +2,14 @@ package com.planet.importexport.staging;
 
 import java.util.List;
 
-import com.mongodb.client.model.IndexOptions;
-import com.mongodb.client.model.Indexes;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
 
 import io.quarkus.mongodb.panache.PanacheMongoRepository;
 import io.quarkus.runtime.StartupEvent;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Observes;
+
+import com.mongodb.client.model.IndexOptions;
+import com.mongodb.client.model.Indexes;
 
 /**
  * Repository for the single generic {@code staging_entries} collection

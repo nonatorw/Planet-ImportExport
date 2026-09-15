@@ -4,11 +4,12 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+import jakarta.enterprise.context.ApplicationScoped;
+
 import com.planet.importexport.jobconfig.exception.InvalidJobConfigurationValueException;
 
 import io.quarkus.mongodb.panache.PanacheMongoRepository;
 import io.quarkus.panache.common.Sort;
-import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * CRUD access to {@code job_configuration} entries (design.md section 1.4;

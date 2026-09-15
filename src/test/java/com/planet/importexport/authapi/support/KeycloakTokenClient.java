@@ -20,11 +20,24 @@ import io.restassured.response.Response;
  * reimplemented ad hoc in test code either).
  */
 public final class KeycloakTokenClient {
+    /**
+     * The Quarkus OIDC config key exposing the Dev-Services-provisioned
+     * realm's base URL. Shared here (rather than duplicated) because both
+     * {@link com.planet.importexport.authapi.AuthenticationIT} and
+     * {@link BearerTokenTestSupport} inject it via {@code @ConfigProperty}.
+     */
+    public static final String AUTH_SERVER_URL_PROPERTY =
+            "quarkus.oidc.auth-server-url";
 
-    private static final String GRANT_TYPE_FIELD = "grant_type";
+    private static final String ACCESS_TOKEN = "access_token";
     private static final String CLIENT_CREDENTIALS_GRANT = "client_credentials";
     private static final String CLIENT_ID_FIELD = "client_id";
     private static final String CLIENT_SECRET_FIELD = "client_secret";
+    private static final String CONTENT_TYPE = "application/x-www-form-urlencoded";
+    private static final String GRANT_TYPE_FIELD = "grant_type";
+
+    private static final String URI_PROTOCOL_OPENID_CONNECT_TOKEN =
+            "/protocol/openid-connect/token";
 
     /**
      * Private constructor: this class only exposes static helpers.
@@ -50,7 +63,7 @@ public final class KeycloakTokenClient {
                                         String clientId,
                                         String clientSecret) {
         return RestAssured.given()
-                          .contentType("application/x-www-form-urlencoded")
+                          .contentType(CONTENT_TYPE)
                           .formParams(Map.of(GRANT_TYPE_FIELD,
                                              CLIENT_CREDENTIALS_GRANT,
                                              CLIENT_ID_FIELD,
@@ -58,7 +71,7 @@ public final class KeycloakTokenClient {
                                              CLIENT_SECRET_FIELD,
                                              clientSecret))
                           .when()
-                          .post(authServerUrl + "/protocol/openid-connect/token");
+                          .post(authServerUrl + URI_PROTOCOL_OPENID_CONNECT_TOKEN);
     }
 
     /**
@@ -76,8 +89,8 @@ public final class KeycloakTokenClient {
         return requestToken(authServerUrl,
                             clientId,
                             clientSecret).then()
-                                        .statusCode(200)
-                                        .extract()
-                                        .path("access_token");
+                                         .statusCode(200)
+                                         .extract()
+                                         .path(ACCESS_TOKEN);
     }
 }

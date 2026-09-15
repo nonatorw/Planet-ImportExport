@@ -1,18 +1,19 @@
 package com.planet.importexport.jobconfig;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import java.time.Instant;
 import java.util.List;
+
+import jakarta.inject.Inject;
+
+import com.planet.importexport.mongo.FlapdoodleMongoTestResource;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import com.planet.importexport.mongo.FlapdoodleMongoTestResource;
-
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Integration tests proving the startup seed migration (A4.2; design.md
