@@ -13,8 +13,9 @@ import io.quarkus.mongodb.panache.common.MongoEntity;
  * {@link org.bson.types.ObjectId}), this document's {@code _id}
  * <strong>is</strong> the externally-exposed {@code jobId} string (e.g.
  * {@code "job-abc123"}, design.md section 1.3) — there is no separate
- * business-key field.
- * See {@link ImportJobIdGenerator} for how that string is produced.
+ * business-key field.</p>
+ *
+ * <p>See {@link ImportJobIdGenerator} for how that string is produced.</p>
  *
  * <p>{@code idsInFile} is populated by an initial lightweight pass over the
  * {@code id} column before chunked processing starts (design.md section 1.3)
@@ -22,11 +23,11 @@ import io.quarkus.mongodb.panache.common.MongoEntity;
  * (Group B2, not implemented here) to decide whether a newly submitted job
  * must wait on any currently running/queued-ahead job. This document model
  * and repository only need to expose that field and a query for in-flight jobs
- * — the gate's waiting logic itself is out of this task's scope.
+ * — the gate's waiting logic itself is out of this task's scope.</p>
  *
  * <p>{@code summary} starts as {@link ImportJobSummary#empty()} and is
  * finalized once the job reaches {@link ImportJobStatus#COMPLETED} or
- * {@link ImportJobStatus#FAILED} (design.md section 3, step 6).
+ * {@link ImportJobStatus#FAILED} (design.md section 3, step 6).</p>
  */
 @MongoEntity(collection = "import_jobs")
 public class ImportJobDocument {

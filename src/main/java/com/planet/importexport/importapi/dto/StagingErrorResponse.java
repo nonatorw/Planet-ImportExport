@@ -18,16 +18,18 @@ import com.planet.importexport.staging.StagingEntry;
  * @param errorDescription free text explaining why the row was staged
  * @param processedAt      when the row was staged
  */
-public record StagingErrorResponse(String jobId,
-                                   int rowId,
-                                   Map<String, Object> rowData,
-                                   String errorDescription,
-                                   Instant processedAt) {
+public record StagingErrorResponse(
+    String jobId,
+    int rowId,
+    Map<String, Object> rowData,
+    String errorDescription,
+    Instant processedAt) {
 
     /**
      * Converts a persisted {@link StagingEntry} into its API representation.
      *
      * @param entry the persisted staging entry
+     *
      * @return the equivalent response DTO
      */
     public static StagingErrorResponse from(StagingEntry entry) {

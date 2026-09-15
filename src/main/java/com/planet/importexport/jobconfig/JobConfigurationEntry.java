@@ -76,21 +76,24 @@ public class JobConfigurationEntry {
      * @param description human-readable explanation of what this setting
      *                    controls
      * @param updatedAt   when this entry was created or last updated
+     *
      * @throws NullPointerException                  if {@code key} or
-     *                                                {@code valueType} is
-     *                                                {@code null}
+     *                                               {@code valueType} is
+     *                                               {@code null}
      * @throws InvalidJobConfigurationValueException if {@code value} does not
-     *                                                parse as {@code valueType}
+     *                                               parse as {@code valueType}
      */
     public JobConfigurationEntry(String key,
                                  String value,
                                  JobConfigurationValueType valueType,
                                  String description,
                                  Instant updatedAt) {
-        this.key = Objects.requireNonNull(key,
-                                          "key must not be null");
-        this.valueType = Objects.requireNonNull(valueType,
-                                                "valueType must not be null");
+        this.key =
+                Objects.requireNonNull(key,
+                                       "key must not be null");
+        this.valueType =
+                Objects.requireNonNull(valueType,
+                                       "valueType must not be null");
 
         valueType.validate(key, value);
         this.value = value;

@@ -18,7 +18,10 @@ public class ImportJobNotFoundExceptionMapper
         implements ExceptionMapper<ImportJobNotFoundException> {
 
     /**
+     * Converts the caught exception into a client-facing error response.
+     *
      * @param exception the caught {@link ImportJobNotFoundException}
+     *
      * @return a {@code 404 Not Found} JSON response carrying the exception's
      *         own message under an {@code "error"} key
      */

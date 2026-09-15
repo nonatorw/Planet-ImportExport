@@ -2,9 +2,7 @@ package com.planet.importexport.importapi.support;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -30,10 +28,15 @@ public class ImportExecutorProducer {
     private static final Logger LOG =
             Logger.getLogger(ImportExecutorProducer.class);
 
-    /** Fixed worker-thread count backing {@link #executor}; see class Javadoc. */
+    /**
+     * Fixed worker-thread count backing {@link #executor}; see class Javadoc.
+     */
     private static final int POOL_SIZE = 4;
 
-    /** The single bounded executor instance produced for the whole application. */
+    /**
+     * The single bounded executor instance produced for the whole
+     * application.
+     */
     private final ExecutorService executor =
             Executors.newFixedThreadPool(POOL_SIZE, new ImportThreadFactory());
 
@@ -69,36 +72,6 @@ public class ImportExecutorProducer {
         } catch (InterruptedException e) {
             executor.shutdownNow();
             Thread.currentThread().interrupt();
-        }
-    }
-
-    /**
-     * Names worker threads {@code import-worker-N} and logs any uncaught
-     * exception rather than letting it terminate the thread silently.
-     */
-    private static final class ImportThreadFactory implements ThreadFactory {
-
-        /** Source of the increasing suffix in each created thread's name. */
-        private final AtomicInteger threadNumber = new AtomicInteger(1);
-
-        /**
-         * @param runnable the task the new thread will run
-         * @return a new, non-daemon, named worker thread
-         */
-        @Override
-        public Thread newThread(Runnable runnable) {
-            Thread thread =
-                    new Thread(runnable,
-                               "import-worker-" +
-                               threadNumber.getAndIncrement());
-            thread.setDaemon(false);
-
-            thread.setUncaughtExceptionHandler((t, e) ->
-                    LOG.errorf(e,
-                               "Uncaught exception in import worker thread %s",
-                               t.getName()));
-
-            return thread;
         }
     }
 }

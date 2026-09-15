@@ -18,12 +18,12 @@ import io.quarkus.mongodb.panache.common.MongoEntity;
  * updated or deleted by this model.
  * The "current" version of an {@code id} is, by convention, the document with
  * the highest {@code version} for that {@code id}
- * (see {@link CustomerRecordRepository}).
+ * (see {@link CustomerRecordRepository}).</p>
  *
  * <p>{@code fields} holds only keys from the recognized schema
  * ({@link RecognizedField}); any other column found in a source file is routed
  * to {@code staging_entries} instead (Group A2, not part of this document
- * model).
+ * model).</p>
  */
 @MongoEntity(collection = "customer_records")
 public class CustomerRecordDocument {
@@ -39,13 +39,19 @@ public class CustomerRecordDocument {
     @BsonProperty("id")
     public String recordId;
 
-    /** Monotonically increasing per {@link #recordId}, starting at 1. */
+    /**
+     * Monotonically increasing per {@link #recordId}, starting at 1.
+     */
     public int version;
 
-    /** Schema-flexible map populated only with {@link RecognizedField} keys. */
+    /**
+     * Schema-flexible map populated only with {@link RecognizedField} keys.
+     */
     public Map<String, Object> fields = new LinkedHashMap<>();
 
-    /** The import job that created this version. */
+    /**
+     * The import job that created this version.
+     */
     public String sourceJobId;
 
     public Instant createdAt;

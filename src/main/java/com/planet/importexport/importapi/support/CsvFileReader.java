@@ -6,6 +6,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +24,7 @@ import com.planet.importexport.importapi.model.RecognizedImportField;
  * interpreted strictly according to the file's own first (header) line, and
  * columns are matched by name, not position ({@code B4}'s explicit
  * requirement — see the import spec scenario "Import a file whose columns are
- * reordered and include an extra field").
+ * reordered and include an extra field").</p>
  *
  * <p>This is a deliberately simple comma-delimited parser (split on {@code ,},
  * no quoted-field or embedded-delimiter support): every sample and scenario
@@ -34,10 +35,14 @@ import com.planet.importexport.importapi.model.RecognizedImportField;
  */
 public final class CsvFileReader {
 
-    /** The single-character field delimiter this parser understands. */
+    /**
+     * The single-character field delimiter this parser understands.
+     */
     private static final String DELIMITER = ",";
 
-    /** Not instantiable: all behavior is exposed through the static methods. */
+    /**
+     * Not instantiable: all behavior is exposed through the static methods.
+     */
     private CsvFileReader() {
         // Utility class.
     }
@@ -53,11 +58,14 @@ public final class CsvFileReader {
      * such rows are still routed to staging later during full row processing
      * ({@code B5.1}/{@code B6}) — this pass exists only to compute the
      * serialization gate's id-set as cheaply as possible, not to validate rows.
+     * </p>
      *
      * @param filePath the source CSV file to read
+     *
      * @return every non-blank {@code id} cell value, in file order; empty if
      *         the file has no header, no rows, or no recognized {@code id}
      *         column
+     *
      * @throws UncheckedIOException if the file cannot be read
      */
     public static List<String> readIdColumn(Path filePath) {
@@ -116,6 +124,7 @@ public final class CsvFileReader {
      * @param chunkConsumer invoked once per chunk, in file order, with at
      *                      most {@code chunkSize} rows each (the final chunk
      *                      may be smaller)
+     *
      * @throws IllegalArgumentException if {@code chunkSize} is not positive
      * @throws UncheckedIOException     if the file cannot be read
      */
@@ -167,6 +176,7 @@ public final class CsvFileReader {
      *               excluded
      * @param header the file's header columns, in file order
      * @param cells  the row's raw cell values, in file order
+     *
      * @return the assembled row
      */
     private static CsvRow toRow(int rowId,
@@ -190,18 +200,14 @@ public final class CsvFileReader {
      * field.
      *
      * @param line the raw line to split
+     *
      * @return the line's fields, in order
      */
     private static List<String> splitLine(String line) {
         // -1 limit preserves trailing empty fields (e.g. a blank last column
         // must still be present).
-        String[] parts = line.split(DELIMITER, -1);
-        List<String> trimmed = new ArrayList<>(parts.length);
-
-        for (String part : parts) {
-            trimmed.add(part.trim());
-        }
-
-        return trimmed;
+        return Arrays.stream(line.split(DELIMITER, -1))
+                     .map(String::trim)
+                     .toList();
     }
 }

@@ -15,7 +15,7 @@ import com.planet.importexport.exportapi.exception.UnsupportedExportFormatExcept
  * be rejected with an explicit unsupported-format error (task C5), not
  * silently mapped to any of these three formats.
  * {@link #fromRequestValue(String)} is the single place that draws this
- * distinction.
+ * distinction.</p>
  */
 public enum ExportFormat {
     CSV,
@@ -27,8 +27,10 @@ public enum ExportFormat {
      * {@code com.planet.importexport.exportapi.dto.ExportRequest}.
      *
      * @param requestedFormat the raw, caller-supplied format value
+     *
      * @return the recognized {@link ExportFormat} matching {@code
      *         requestedFormat}, case-insensitively
+     *
      * @throws UnsupportedExportFormatException if {@code requestedFormat} is
      *                                          blank, unknown, or names the
      *                                          legacy XLS format explicitly
@@ -49,10 +51,13 @@ public enum ExportFormat {
                       .filter(format -> format.name().equals(normalized))
                       .findFirst();
 
-        // Covers "XLS" explicitly as well as any other unrecognized format
-        // token; both are reported identically as "unsupported format"
-        // (spec.md: "rejected as an unsupported format", no distinction
-        // required between "legacy" and "unknown").
-        return match.orElseThrow(() -> new UnsupportedExportFormatException(requestedFormat));
+        /*
+         * Covers "XLS" explicitly as well as any other unrecognized format
+         * token; both are reported identically as "unsupported format"
+         * (spec.md: "rejected as an unsupported format", no distinction
+         * required between "legacy" and "unknown").
+         */
+        return match.orElseThrow(
+            () -> new UnsupportedExportFormatException(requestedFormat));
     }
 }

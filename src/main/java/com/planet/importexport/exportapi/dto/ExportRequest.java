@@ -15,13 +15,14 @@ import jakarta.validation.constraints.NotEmpty;
  * since "is this a known format" is a domain rule, not a shape constraint.
  * Likewise {@code columns} is validated for presence/non-blank entries here,
  * while "is this a recognized column" is enforced by
- * {@code com.planet.importexport.exportapi.validator.ExportColumnValidator}.
+ * {@code com.planet.importexport.exportapi.validator.ExportColumnValidator}.</p>
  *
  * @param format  the requested output format; must not be blank
  * @param columns the requested columns, in the exact order the output must
  *                honor; must not be empty and every entry must not be blank
  */
 public record ExportRequest(
-        @NotBlank(message = "format must not be blank") String format,
+        @NotBlank(message = "format must not be blank")
+        String format,
         @NotEmpty(message = "columns must not be empty")
-                List<@NotBlank(message = "column name must not be blank") String> columns) {}
+        List<@NotBlank(message = "column name must not be blank") String> columns) {}

@@ -8,4 +8,6 @@ package com.planet.importexport.importapi.dto;
  *
  * @param jobId the identifier assigned to the newly accepted import job
  */
-public record SubmitImportResponse(String jobId) {}
+public record SubmitImportResponse(
+    String jobId) {
+    }

@@ -7,9 +7,8 @@ import java.util.Set;
 import com.planet.importexport.importapi.model.CsvRow;
 import com.planet.importexport.importapi.model.RowOutcome;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Unit tests for {@link ImportRowValidator} covering {@code B4}-{@code B6}:
@@ -18,6 +17,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class ImportRowValidatorTest {
 
+    /**
+     * A row with every recognized field present and valid validates as a
+     * {@link RowOutcome.Success} carrying the record id and the recognized
+     * fields converted to their target types (e.g. {@code age} as an int).
+     */
     @Test
     void succeedsWithAllRecognizedFieldsPresentAndValid() {
         CsvRow row = new CsvRow(1,
@@ -30,17 +34,27 @@ class ImportRowValidatorTest {
 
         RowOutcome outcome = ImportRowValidator.validate(row, Set.of());
 
-        assertThat(outcome).isInstanceOf(RowOutcome.Success.class);
+        Assertions.assertThat(outcome)
+                  .isInstanceOf(RowOutcome.Success.class);
+
         RowOutcome.Success success = (RowOutcome.Success) outcome;
-        assertThat(success.recordId()).isEqualTo("1");
-        assertThat(success.recognizedFields())
-                .containsEntry("name", "John Smith")
-                .containsEntry("email", "john@example.com")
-                .containsEntry("age", 35)
-                .containsEntry("country", "Portugal")
-                .containsEntry("phone", "+351910000000");
+
+        Assertions.assertThat(success.recordId())
+                  .isEqualTo("1");
+
+        Assertions.assertThat(success.recognizedFields())
+                  .containsEntry("name", "John Smith")
+                  .containsEntry("email", "john@example.com")
+                  .containsEntry("age", 35)
+                  .containsEntry("country", "Portugal")
+                  .containsEntry("phone", "+351910000000");
     }
 
+    /**
+     * A recognized field that is entirely absent from the header (not merely
+     * blank) is simply left out of the resulting recognized fields, rather
+     * than causing validation to fail.
+     */
     @Test
     void onlyIncludesRecognizedFieldsActuallyPresentInHeader() {
         // Header reordered and missing "phone" entirely (B4: header-driven, not positional).
@@ -52,14 +66,21 @@ class ImportRowValidatorTest {
                                            "country", "Portugal"));
 
         RowOutcome outcome = ImportRowValidator.validate(row, Set.of());
-        assertThat(outcome)
-                .isInstanceOf(RowOutcome.Success.class);
+
+        Assertions.assertThat(outcome)
+                  .isInstanceOf(RowOutcome.Success.class);
 
         RowOutcome.Success success = (RowOutcome.Success) outcome;
-        assertThat(success.recognizedFields())
-                .doesNotContainKey("phone");
+
+        Assertions.assertThat(success.recognizedFields())
+                  .doesNotContainKey("phone");
     }
 
+    /**
+     * A row whose {@code id} value is blank fails validation as a
+     * {@link RowOutcome.Failure} whose description mentions both "missing"
+     * and "id".
+     */
     @Test
     void stagesRowWithMissingIdValue() {
         CsvRow row = new CsvRow(4,
@@ -67,14 +88,19 @@ class ImportRowValidatorTest {
                                            "name", "Ana Costa"));
 
         RowOutcome outcome = ImportRowValidator.validate(row, Set.of());
-        assertThat(outcome)
-                .isInstanceOf(RowOutcome.Failure.class);
+        Assertions.assertThat(outcome)
+                  .isInstanceOf(RowOutcome.Failure.class);
 
-        assertThat(((RowOutcome.Failure) outcome).errorDescription())
-                .contains("missing")
-                .contains("id");
+        Assertions.assertThat(((RowOutcome.Failure) outcome).errorDescription())
+                  .contains("missing")
+                  .contains("id");
     }
 
+    /**
+     * A row whose {@code age} value is present in the header but blank fails
+     * validation as a {@link RowOutcome.Failure} whose description mentions
+     * both "missing" and "age".
+     */
     @Test
     void stagesRowWithMissingRecognizedFieldValue() {
         // customers_02.csv scenario: id "4" has an empty age.
@@ -86,15 +112,20 @@ class ImportRowValidatorTest {
                                            "country", "Portugal"));
 
         RowOutcome outcome = ImportRowValidator.validate(row, Set.of());
-        assertThat(outcome)
-                .isInstanceOf(RowOutcome.Failure.class);
+        Assertions.assertThat(outcome)
+                  .isInstanceOf(RowOutcome.Failure.class);
 
         String description = ((RowOutcome.Failure) outcome).errorDescription();
-        assertThat(description)
-                .contains("missing")
-                .contains("age");
+        Assertions.assertThat(description)
+                  .contains("missing")
+                  .contains("age");
     }
 
+    /**
+     * A row whose {@code email} value is not a well-formed email address
+     * fails validation as a {@link RowOutcome.Failure} whose description
+     * mentions "email".
+     */
     @Test
     void stagesRowWithInvalidEmail() {
         CsvRow row = new CsvRow(5,
@@ -106,13 +137,17 @@ class ImportRowValidatorTest {
                                            "country", "Italy"));
 
         RowOutcome outcome = ImportRowValidator.validate(row, Set.of());
-        assertThat(outcome)
-                .isInstanceOf(RowOutcome.Failure.class);
+        Assertions.assertThat(outcome)
+                  .isInstanceOf(RowOutcome.Failure.class);
 
-        assertThat(((RowOutcome.Failure) outcome).errorDescription())
-                .contains("email");
+        Assertions.assertThat(((RowOutcome.Failure) outcome).errorDescription())
+                  .contains("email");
     }
 
+    /**
+     * A row whose {@code age} value is not numeric fails validation as a
+     * {@link RowOutcome.Failure} whose description mentions "age".
+     */
     @Test
     void stagesRowWithNonNumericAge() {
         CsvRow row = new CsvRow(5,
@@ -121,13 +156,18 @@ class ImportRowValidatorTest {
                                            "age", "thirty"));
 
         RowOutcome outcome = ImportRowValidator.validate(row, Set.of());
-        assertThat(outcome)
-                .isInstanceOf(RowOutcome.Failure.class);
+        Assertions.assertThat(outcome)
+                  .isInstanceOf(RowOutcome.Failure.class);
 
-        assertThat(((RowOutcome.Failure) outcome).errorDescription())
-                .contains("age");
+        Assertions.assertThat(((RowOutcome.Failure) outcome).errorDescription())
+                  .contains("age");
     }
 
+    /**
+     * A row whose {@code age} value is numeric but outside the accepted
+     * range (e.g. 121) fails validation as a {@link RowOutcome.Failure}
+     * whose description mentions "age".
+     */
     @Test
     void stagesRowWithOutOfRangeAge() {
         CsvRow row = new CsvRow(5,
@@ -136,13 +176,18 @@ class ImportRowValidatorTest {
                                            "age", "121"));
 
         RowOutcome outcome = ImportRowValidator.validate(row, Set.of());
-        assertThat(outcome)
-                .isInstanceOf(RowOutcome.Failure.class);
+        Assertions.assertThat(outcome)
+                  .isInstanceOf(RowOutcome.Failure.class);
 
-        assertThat(((RowOutcome.Failure) outcome).errorDescription())
-                .contains("age");
+        Assertions.assertThat(((RowOutcome.Failure) outcome).errorDescription())
+                  .contains("age");
     }
 
+    /**
+     * A row under a header that declares a column not in the recognized set
+     * fails validation as a {@link RowOutcome.Failure} whose description
+     * mentions both "unknown column" and the offending column's name.
+     */
     @Test
     void stagesRowWhenHeaderDeclaresUnknownColumn() {
         CsvRow row = new CsvRow(6,
@@ -156,14 +201,23 @@ class ImportRowValidatorTest {
         RowOutcome outcome =
                 ImportRowValidator.validate(row, Set.of("loyalty_tier"));
 
-        assertThat(outcome)
-                .isInstanceOf(RowOutcome.Failure.class);
+        Assertions.assertThat(outcome)
+                  .isInstanceOf(RowOutcome.Failure.class);
 
-        assertThat(((RowOutcome.Failure) outcome).errorDescription())
-                .contains("unknown column")
-                .contains("loyalty_tier");
+        Assertions.assertThat(((RowOutcome.Failure) outcome).errorDescription())
+                  .contains("unknown column")
+                  .contains("loyalty_tier");
     }
 
+    /**
+     * Builds an order-preserving map from alternating key/value arguments,
+     * used to assemble a {@link CsvRow}'s column values in a fixed order.
+     *
+     * @param keyValuePairs an even-length sequence of alternating keys and
+     *                      values
+     *
+     * @return the assembled map, in the given key order
+     */
     private static Map<String, String> orderedMap(String... keyValuePairs) {
         Map<String, String> map = new LinkedHashMap<>();
 

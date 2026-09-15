@@ -18,28 +18,36 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
  * <p><strong>Dependency note:</strong> this class requires
  * {@code org.apache.poi:poi-ooxml}, added to {@code build.gradle} to satisfy
  * this task and approved per AGENTS.md ("Ask first: Adding new
- * dependencies").
+ * dependencies").</p>
  *
  * <p>All requested columns are written as text cells (no numeric/date
  * cell-type inference), since the recognized schema's only numeric-looking
  * field ({@code age}) is stored as an already-decided string value in the
  * export projection ({@link ExportRowProjector}) — consistent with CSV/TXT
- * output where every cell is plain text.
+ * output where every cell is plain text.</p>
  */
 public final class XlsxExportWriter {
 
     private static final String SHEET_NAME = "Export";
 
-    /** Not instantiable: all behavior is exposed through {@link #write(List, List)}. */
+    /**
+     * Not instantiable: all behavior is exposed through
+     * {@link #write(List, List)}.
+     */
     private XlsxExportWriter() {
         // Utility class.
     }
 
     /**
+     * Writes {@code columns} and {@code rows} as a valid XLSX workbook with a
+     * single sheet.
+     *
      * @param columns the requested column names, written as the header row
      * @param rows    the data rows to write, each already ordered to match
      *                {@code columns}
+     *
      * @return the serialized XLSX workbook bytes, header row first
+     *
      * @throws UncheckedIOException if the in-memory workbook cannot be
      *                              serialized
      */
@@ -65,6 +73,15 @@ public final class XlsxExportWriter {
         }
     }
 
+    /**
+     * Writes {@code values} as text cells on the row at {@code rowIndex} of
+     * {@code sheet}, creating the row and each cell.
+     *
+     * @param sheet    the sheet to write the row into
+     * @param rowIndex the zero-based index of the row to create
+     * @param values   the cell values for this row, in column order; a
+     *                 {@code null} value is written as an empty cell
+     */
     private static void writeRow(XSSFSheet sheet,
                                  int rowIndex,
                                  List<String> values) {

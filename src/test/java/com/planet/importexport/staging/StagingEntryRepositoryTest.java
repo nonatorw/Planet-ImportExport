@@ -12,14 +12,11 @@ import com.planet.importexport.mongo.FlapdoodleMongoTestResource;
 
 import org.bson.Document;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Integration test proving {@link StagingEntryRepository} persists
@@ -40,6 +37,12 @@ class StagingEntryRepositoryTest {
         repository.deleteAll();
     }
 
+    /**
+     * Persisting staging entries for two different jobs and then fetching by
+     * {@code jobId} returns only the entries for that job, each keeping its
+     * row data, error description, and assigned id, without picking up
+     * entries staged under a different job id.
+     */
     @Test
     void persistsAndFindsByJobId() {
         StagingEntry invalidAge = new StagingEntry();
@@ -94,39 +97,51 @@ class StagingEntryRepositoryTest {
         List<StagingEntry> forJob =
                 repository.findByJobId("job-abc123");
 
-        assertEquals(2, forJob.size());
+        Assertions.assertEquals(2,
+                                forJob.size());
 
         Set<Integer> rowIds = Set.of(forJob.get(0).rowId,
                                      forJob.get(1).rowId);
 
-        assertEquals(Set.of(5, 7), rowIds);
+        Assertions.assertEquals(Set.of(5, 7),
+                                rowIds);
 
-        assertTrue(forJob.stream()
-                         .anyMatch(entry -> entry.errorDescription
-                                                 .contains("age")));
-        assertTrue(forJob.stream()
-                         .anyMatch(entry -> entry.errorDescription
-                                                 .contains("loyalty_tier")));
-        assertTrue(forJob.stream()
-                         .allMatch(entry -> entry.id != null));
+        Assertions.assertTrue(forJob.stream()
+                                    .anyMatch(entry ->
+                                        entry.errorDescription
+                                             .contains("age")));
+        Assertions.assertTrue(forJob.stream()
+                                    .anyMatch(entry ->
+                                        entry.errorDescription
+                                             .contains("loyalty_tier")));
+        Assertions.assertTrue(forJob.stream()
+                                    .allMatch(entry -> entry.id != null));
 
         List<StagingEntry> forOtherJob =
                 repository.findByJobId("job-other456");
 
-        assertEquals(1, forOtherJob.size());
+        Assertions.assertEquals(1, forOtherJob.size());
 
-        assertTrue(forOtherJob.get(0)
-                              .errorDescription.contains("email"));
+        Assertions.assertTrue(forOtherJob.get(0)
+                                         .errorDescription.contains("email"));
     }
 
+    /**
+     * Looking up a job id with no staged entries returns an empty list
+     * rather than throwing or returning {@code null}.
+     */
     @Test
     void findByJobIdReturnsEmptyListWhenNoEntriesExist() {
         List<StagingEntry> result =
                 repository.findByJobId("job-does-not-exist");
 
-        assertTrue(result.isEmpty());
+        Assertions.assertTrue(result.isEmpty());
     }
 
+    /**
+     * The {@code staging_entries} collection has an index defined on the
+     * {@code jobId} field, backing the job-status lookup query.
+     */
     @Test
     void jobIdIndexExistsOnCollection() {
         List<Document> indexes =
@@ -140,9 +155,9 @@ class StagingEntryRepositoryTest {
                                                Document.class))
                        .anyMatch(key -> key.containsKey("jobId"));
 
-        assertNotNull(indexes);
+        Assertions.assertNotNull(indexes);
 
-        assertTrue(hasJobIdIndex,
-                   "Expected an index on 'jobId' on staging_entries collection");
+        Assertions.assertTrue(hasJobIdIndex,
+                              "Expected an index on 'jobId' on staging_entries collection");
     }
 }

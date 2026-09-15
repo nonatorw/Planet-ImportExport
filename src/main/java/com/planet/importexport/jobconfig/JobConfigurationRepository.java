@@ -22,7 +22,7 @@ import io.quarkus.panache.common.Sort;
  * {@link JobConfigurationValueType#validate(String, String)} before
  * persisting, so a malformed entry can never reach storage through this
  * repository (ADR-0007's primary safeguard; it does not claim database-level
- * enforcement).
+ * enforcement).</p>
  */
 @ApplicationScoped
 public class JobConfigurationRepository
@@ -32,6 +32,7 @@ public class JobConfigurationRepository
      * Looks up a single entry by its configuration key.
      *
      * @param key the configuration key (Mongo {@code _id}) to look up
+     *
      * @return the matching entry, or {@link Optional#empty()} if none exists
      */
     public Optional<JobConfigurationEntry> findByKey(String key) {
@@ -53,6 +54,7 @@ public class JobConfigurationRepository
      * are validated by the entry's own constructor.
      *
      * @param entry the entry to persist
+     *
      * @return the same {@code entry}, for call chaining/convenience
      */
     public JobConfigurationEntry insert(JobConfigurationEntry entry) {
@@ -73,7 +75,9 @@ public class JobConfigurationRepository
      * @param newValueType  the new declared type governing how
      *                      {@code newValue} is validated and parsed
      * @param newDescription the new human-readable description
+     *
      * @return the updated entry
+     *
      * @throws java.util.NoSuchElementException      if no entry exists for
      *                                               {@code key}
      * @throws InvalidJobConfigurationValueException if {@code newValue} does
@@ -98,6 +102,7 @@ public class JobConfigurationRepository
      * Deletes the entry for {@code key}, if any.
      *
      * @param key the configuration key of the entry to delete
+     *
      * @return {@code true} if an entry was deleted, {@code false} if none
      * existed for {@code key}
      */
@@ -112,7 +117,9 @@ public class JobConfigurationRepository
      * parsing/validation.
      *
      * @param key the configuration key to read
+     *
      * @return the entry's value parsed as an {@code int}
+     *
      * @throws java.util.NoSuchElementException      if no entry exists for
      *                                               {@code key}
      * @throws InvalidJobConfigurationValueException if the stored entry's

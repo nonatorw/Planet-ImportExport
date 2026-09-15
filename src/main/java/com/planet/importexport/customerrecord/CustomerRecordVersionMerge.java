@@ -41,8 +41,10 @@ public final class CustomerRecordVersionMerge {
      *                                 newly imported row; a field absent from
      *                                 this map is inherited unchanged from
      *                                 {@code previousVersionFields}
+     *
      * @return a new map representing {@code fields(N+1)}; neither input map
      *         is mutated
+     *
      * @throws IllegalArgumentException if {@code incomingRecognizedFields}
      *                                  contains a key that is not a
      *                                  {@link RecognizedField}
@@ -70,6 +72,7 @@ public final class CustomerRecordVersionMerge {
      * recognized schema.
      *
      * @param fieldName the incoming row's field name to validate
+     *
      * @throws IllegalArgumentException if {@code fieldName} is not a
      *                                  {@link RecognizedField}
      */

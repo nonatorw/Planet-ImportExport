@@ -5,8 +5,11 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.planet.importexport.importapi.model.RecognizedImportField;
 
@@ -17,7 +20,9 @@ import com.planet.importexport.importapi.model.RecognizedImportField;
  */
 public final class CsvHeaderReader {
 
-    /** Not instantiable: all behavior is exposed through the static methods. */
+    /**
+     * Not instantiable: all behavior is exposed through the static methods.
+     */
     private CsvHeaderReader() {
         // Utility class.
     }
@@ -27,25 +32,17 @@ public final class CsvHeaderReader {
      * empty if the file has no header/is empty.
      *
      * @param filePath the source CSV file to read
+     *
      * @return the header's column names, in file order; empty if the file
      *         has no header
+     *
      * @throws UncheckedIOException if the file cannot be read
      */
     public static Set<String> readHeader(Path filePath) {
         try (BufferedReader reader = Files.newBufferedReader(filePath)) {
-            String headerLine = reader.readLine();
-
-            if (headerLine == null) {
-                return Set.of();
-            }
-
-            Set<String> header = new LinkedHashSet<>();
-
-            for (String column : headerLine.split(",", -1)) {
-                header.add(column.trim());
-            }
-
-            return header;
+            return Optional.ofNullable(reader.readLine())
+                           .map(CsvHeaderReader::splitColumns)
+                           .orElseGet(Set::of);
 
         } catch (IOException e) {
             throw new UncheckedIOException(
@@ -59,18 +56,27 @@ public final class CsvHeaderReader {
      *
      * @param header the file's header column names, e.g. from
      *               {@link #readHeader(Path)}
+     *
      * @return the columns in {@code header} that are not part of the
      *         recognized schema, in the order they appear in {@code header}
      */
     public static Set<String> unknownColumns(Set<String> header) {
-        Set<String> unknown = new LinkedHashSet<>();
+        return header.stream()
+                     .filter(column -> !RecognizedImportField.isRecognized(column))
+                     .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
 
-        for (String column : header) {
-            if (!RecognizedImportField.isRecognized(column)) {
-                unknown.add(column);
-            }
-        }
-
-        return unknown;
+    /**
+     * Splits one header line into trimmed column names, preserving file
+     * order.
+     *
+     * @param headerLine the raw, unsplit header line
+     *
+     * @return the header's column names, in file order
+     */
+    private static Set<String> splitColumns(String headerLine) {
+        return Arrays.stream(headerLine.split(",", -1))
+                     .map(String::trim)
+                     .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 }

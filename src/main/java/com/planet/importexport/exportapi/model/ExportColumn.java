@@ -12,7 +12,7 @@ import java.util.Optional;
  * {@code id} — the business identity key is a top-level
  * {@code CustomerRecordDocument} field, not one of the {@code fields} map
  * entries, but it is still a column a caller may request in an export
- * (design.md section 2: {@code "columns": ["id","name","email","country"]}).
+ * (design.md section 2: {@code "columns": ["id","name","email","country"]}).</p>
  *
  * <p>This enum is intentionally a local copy scoped to the {@code exportapi}
  * package (Group C), not a reuse of {@code customerrecord.RecognizedField}.
@@ -20,7 +20,7 @@ import java.util.Optional;
  * shared recognized-schema constant"),
  * Import (Group B) and Export (Group C) each define their own copy of the
  * recognized column list rather than share one, to avoid a cross-group
- * file-contention point while both groups implement in parallel.
+ * file-contention point while both groups implement in parallel.</p>
  */
 public enum ExportColumn {
     ID("id"),
@@ -30,10 +30,14 @@ public enum ExportColumn {
     COUNTRY("country"),
     PHONE("phone");
 
-    /** The exact column name this constant recognizes. */
+    /**
+     * The exact column name this constant recognizes.
+     */
     private final String columnName;
 
     /**
+     * Creates a new export column constant.
+     *
      * @param columnName the exact column name this constant recognizes
      */
     ExportColumn(String columnName) {
@@ -41,6 +45,8 @@ public enum ExportColumn {
     }
 
     /**
+     * Returns the exact column name this constant recognizes.
+     *
      * @return the exact column name this constant recognizes
      */
     public String columnName() {
@@ -48,7 +54,10 @@ public enum ExportColumn {
     }
 
     /**
+     * Checks whether a candidate column name matches a recognized column.
+     *
      * @param candidateColumnName a column name to test
+     *
      * @return {@code true} if {@code candidateColumnName} matches a
      *         recognized column's {@link #columnName()}
      */
@@ -57,7 +66,10 @@ public enum ExportColumn {
     }
 
     /**
+     * Looks up the export column constant matching a candidate column name.
+     *
      * @param candidateColumnName a column name to look up
+     *
      * @return the matching constant, or {@link Optional#empty()} if
      *         {@code candidateColumnName} matches no recognized column
      */

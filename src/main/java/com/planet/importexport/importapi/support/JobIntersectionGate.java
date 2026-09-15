@@ -17,7 +17,7 @@ import jakarta.enterprise.context.ApplicationScoped;
  * captured on the request thread — before any executor scheduling
  * non-determinism can reorder things — while the actual (potentially long)
  * wait happens on the background executor task, never on the HTTP request
- * thread (ADR-0002: the import endpoint must return immediately):
+ * thread (ADR-0002: the import endpoint must return immediately):</p>
  *
  * <ol>
  *   <li>{@link #arrive(String, Set)} — called synchronously by the import
@@ -39,20 +39,26 @@ import jakarta.enterprise.context.ApplicationScoped;
  * only when its id-set is disjoint from every *earlier* arrival still present
  * (running or itself still waiting) — never merely from the currently-running
  * set — which is what prevents a later arrival from jumping ahead of an
- * earlier, still-queued, intersecting one.
+ * earlier, still-queued, intersecting one.</p>
  *
  * <p>This is safe-published, in-process-only state (ADR-0002/ADR-0003,
  * "governs only within a single running application instance") — a
  * {@link ReentrantLock} guards the mutable arrival queue, and the
- * {@link Condition} avoids busy-waiting while a job is blocked.
+ * {@link Condition} avoids busy-waiting while a job is blocked.</p>
  */
 @ApplicationScoped
 public class JobIntersectionGate {
 
-    /** Guards {@link #arrivals} against concurrent access from multiple worker threads. */
+    /**
+     * Guards {@link #arrivals} against concurrent access from multiple
+     * worker threads.
+     */
     private final ReentrantLock lock = new ReentrantLock();
 
-    /** Signaled by {@link #release(String)}; awaited by {@link #awaitTurn(String)}. */
+    /**
+     * Signaled by {@link #release(String)}; awaited by
+     * {@link #awaitTurn(String)}.
+     */
     private final Condition released = lock.newCondition();
 
     /**
@@ -88,6 +94,7 @@ public class JobIntersectionGate {
      *
      * @param jobId the job whose turn to wait for; must have already called
      *              {@link #arrive(String, Set)}
+     *
      * @throws IllegalStateException if {@code jobId} never called
      *                               {@link #arrive(String, Set)}
      * @throws InterruptedException  if the calling thread is interrupted while
@@ -130,50 +137,28 @@ public class JobIntersectionGate {
      * intersects its id-set.
      *
      * @param jobId the job to check
+     *
      * @return {@code true} if an earlier, still-present arrival intersects
      *         {@code jobId}'s id-set
+     *
      * @throws IllegalStateException if {@code jobId} is not present in
      *                               {@link #arrivals}
      */
     private boolean intersectsAnyEarlierArrival(String jobId) {
-        Arrival self = null;
+        Set<String> selfIds =
+                arrivals.stream()
+                        .filter(arrival -> arrival.jobId().equals(jobId))
+                        .findFirst()
+                        .map(Arrival::idsInFile)
+                        .orElseThrow(
+                            () -> new IllegalStateException(
+                                "Job did not register arrival before awaiting its turn: " +
+                                jobId));
 
-        for (Arrival arrival : arrivals) {
-            if (arrival.jobId().equals(jobId)) {
-                self = arrival;
-                break;
-            }
-        }
-
-        if (self == null) {
-            throw new IllegalStateException(
-                    "Job did not register arrival before awaiting its turn: " +
-                    jobId);
-        }
-
-        for (Arrival other : arrivals) {
-            if (other.jobId().equals(jobId)) {
-                // Reached self with no intersecting predecessor found — clear
-                // to proceed.
-                return false;
-            }
-
-            if (!Collections.disjoint(other.idsInFile(), self.idsInFile())) {
-                return true;
-            }
-        }
-
-        throw new IllegalStateException("Unreachable: self must be present in arrivals: " + jobId);
+        return arrivals.stream()
+                       .takeWhile(arrival -> !arrival.jobId().equals(jobId))
+                       .anyMatch(earlier -> !Collections.disjoint(earlier.idsInFile(), selfIds));
     }
-
-    /**
-     * One queued or running job's arrival record.
-     *
-     * @param jobId     the job's identifier
-     * @param idsInFile the job's full {@code id} column value set, snapshotted
-     *                  at arrival time
-     */
-    private record Arrival(String jobId, Set<String> idsInFile) {}
 
     /**
      * Test/diagnostic hook: number of jobs currently registered (running or

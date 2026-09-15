@@ -8,12 +8,11 @@ import jakarta.inject.Inject;
 import com.planet.importexport.mongo.FlapdoodleMongoTestResource;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Integration tests proving the startup seed migration (A4.2; design.md
@@ -29,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * exercised implicitly by every test in this class. Each test additionally
  * invokes {@link JobConfigurationSeedMigration#seedChunkSizeIfAbsent()}
  * directly to prove the specific idempotency property under test, without
- * relying on triggering a second real Quarkus startup.
+ * relying on triggering a second real Quarkus startup.</p>
  */
 @QuarkusTest
 @QuarkusTestResource(FlapdoodleMongoTestResource.class)
@@ -45,6 +44,11 @@ class JobConfigurationSeedMigrationIT {
         repository.deleteAll();
     }
 
+    /**
+     * Running the seed migration against an empty collection creates the
+     * {@code chunkSize} entry with its default value and {@code INTEGER}
+     * valueType.
+     */
     @Test
     void seedChunkSizeIfAbsent_seedsDefaultValue_whenAbsent() {
         repository.deleteAll();
@@ -54,13 +58,18 @@ class JobConfigurationSeedMigrationIT {
         JobConfigurationEntry seeded =
                 repository.findByKey(JobConfigurationSeedMigration.CHUNK_SIZE_KEY)
                           .orElseThrow();
-        assertEquals(JobConfigurationSeedMigration.CHUNK_SIZE_DEFAULT_VALUE,
-                     seeded.value);
 
-        assertEquals(JobConfigurationValueType.INTEGER,
-                     seeded.valueType);
+        Assertions.assertEquals(JobConfigurationSeedMigration.CHUNK_SIZE_DEFAULT_VALUE,
+                                seeded.value);
+
+        Assertions.assertEquals(JobConfigurationValueType.INTEGER,
+                                seeded.valueType);
     }
 
+    /**
+     * Running the seed migration twice in a row still leaves exactly one
+     * {@code chunkSize} entry in the collection, never a duplicate.
+     */
     @Test
     void seedChunkSizeIfAbsent_isIdempotent_doesNotDuplicateOnSecondRun() {
         repository.deleteAll();
@@ -77,15 +86,23 @@ class JobConfigurationSeedMigrationIT {
                                                              .equals(e.key))
                    .count();
 
-        assertEquals(1, chunkSizeEntries);
+        Assertions.assertEquals(1,
+                                chunkSizeEntries);
     }
 
+    /**
+     * Running the seed migration when {@code chunkSize} already exists with
+     * an operator-modified value leaves that value and description
+     * untouched, rather than resetting them back to the default.
+     */
     @Test
     void seedChunkSizeIfAbsent_doesNotOverwrite_anAlreadyModifiedEntry() {
         repository.deleteAll();
-        // Simulate an operator having already changed chunkSize via the
-        // (future) CRUD API before this migration observer runs again on a
-        // subsequent application start.
+        /*
+         * Simulate an operator having already changed chunkSize via the
+         * (future) CRUD API before this migration observer runs again on a
+         * subsequent application start.
+         */
         repository.insert(
                 new JobConfigurationEntry(JobConfigurationSeedMigration.CHUNK_SIZE_KEY,
                                           "1000",
@@ -99,8 +116,10 @@ class JobConfigurationSeedMigrationIT {
                 repository.findByKey(JobConfigurationSeedMigration.CHUNK_SIZE_KEY)
                           .orElseThrow();
 
-        assertEquals("1000", entry.value);
+        Assertions.assertEquals("1000",
+                                entry.value);
 
-        assertEquals("operator-modified", entry.description);
+        Assertions.assertEquals("operator-modified",
+                                entry.description);
     }
 }

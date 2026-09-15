@@ -9,14 +9,16 @@ import java.util.List;
  * section 2: {@code {"error": "unknown column", "column": "loyalty_tier"}}).
  *
  * <p>This is an application-level (unchecked) validation failure;
- * {@code com.planet.importexport.exportapi.exception.mapper.ExportExceptionMapper}
- * translates it into an HTTP 400 response naming the invalid column(s).
+ * {@link com.planet.importexport.exportapi.exception.mapper.UnknownColumnMapper}
+ * translates it into an HTTP 400 response naming the invalid column(s).</p>
  */
 public class UnknownExportColumnException extends RuntimeException {
 
     private final List<String> unknownColumns;
 
     /**
+     * Creates a new exception for a set of unrecognized requested columns.
+     *
      * @param unknownColumns every requested column name found outside the
      *                       recognized export schema, in the order they were
      *                       requested; must not be empty
@@ -27,6 +29,8 @@ public class UnknownExportColumnException extends RuntimeException {
     }
 
     /**
+     * Returns the first unrecognized column requested.
+     *
      * @return the first unrecognized column, for the single-column error body
      *         shape (design.md section 2)
      */
@@ -35,6 +39,8 @@ public class UnknownExportColumnException extends RuntimeException {
     }
 
     /**
+     * Returns every unrecognized column requested.
+     *
      * @return every unrecognized column found in the request, in the order
      *         they were requested
      */

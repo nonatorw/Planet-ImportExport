@@ -7,7 +7,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -24,7 +23,6 @@ import com.planet.importexport.importapi.validator.ImportRowValidator;
 import com.planet.importexport.importjob.ImportJobDocument;
 import com.planet.importexport.importjob.ImportJobIdGenerator;
 import com.planet.importexport.importjob.ImportJobRepository;
-import com.planet.importexport.importjob.ImportJobSummary;
 import com.planet.importexport.jobconfig.JobConfigurationRepository;
 import com.planet.importexport.staging.StagingEntry;
 import com.planet.importexport.staging.StagingEntryRepository;
@@ -75,7 +73,8 @@ public class ImportProcessingService {
                                    CustomerRecordRepository customerRecordRepository,
                                    JobConfigurationRepository jobConfigurationRepository,
                                    JobIntersectionGate gate,
-                                   @ImportExecutor ExecutorService importExecutor) {
+                                   @ImportExecutor
+                                   ExecutorService importExecutor) {
         this(importJobRepository,
              stagingEntryRepository,
              customerRecordRepository,
@@ -128,7 +127,9 @@ public class ImportProcessingService {
      *
      * @param filePath the path of the CSV file to import, as submitted by the
      *                 client
+     *
      * @return the newly generated {@code jobId}
+     *
      * @throws FileNotReadableException if {@code filePath} does not reference
      *                                  a readable file
      */
@@ -150,10 +151,12 @@ public class ImportProcessingService {
                                                       idsInFile);
         importJobRepository.persist(job);
 
-        // Arrival is registered here, on the request thread, before the
-        // executor task is even submitted — this is what makes arrival order
-        // match submission order (ADR-0003), not whatever order the executor
-        // happens to schedule worker threads in.
+        /*
+         * Arrival is registered here, on the request thread, before the
+         * executor task is even submitted — this is what makes arrival order
+         * match submission order (ADR-0003), not whatever order the executor
+         * happens to schedule worker threads in.
+         */
         gate.arrive(jobId, Set.copyOf(idsInFile));
 
         importExecutor.submit(() -> processJob(jobId, path));
@@ -204,15 +207,15 @@ public class ImportProcessingService {
         Instant startedAt = Instant.now(clock);
         importJobRepository.markRunning(jobId, startedAt);
 
-        AtomicInteger totalRows = new AtomicInteger();
-        AtomicInteger succeeded = new AtomicInteger();
-        AtomicInteger failed = new AtomicInteger();
+        ImportRunCounters counters = new ImportRunCounters();
 
         try {
-            // B3: chunkSize is re-read from job configuration at the start of
-            // every job — never cached across jobs — so a runtime
-            // configuration change takes effect on the next job (design.md
-            // section 3, step 4).
+            /*
+             * B3: chunkSize is re-read from job configuration at the start of
+             * every job — never cached across jobs — so a runtime
+             * configuration change takes effect on the next job (design.md
+             * section 3, step 4).
+             */
             int chunkSize =
                     jobConfigurationRepository.getIntValue(CHUNK_SIZE_KEY);
             Set<String> unknownColumns =
@@ -224,28 +227,16 @@ public class ImportProcessingService {
                                        chunk -> processChunk(jobId,
                                                              chunk,
                                                              unknownColumns,
-                                                             totalRows,
-                                                             succeeded,
-                                                             failed));
-
-            ImportJobSummary summary =
-                    new ImportJobSummary(totalRows.get(),
-                                         succeeded.get(),
-                                         failed.get());
+                                                             counters));
 
             importJobRepository.markCompleted(jobId,
                                               Instant.now(clock),
-                                              summary);
+                                              counters.toSummary());
 
         } catch (RuntimeException e) {
-            ImportJobSummary partialSummary =
-                    new ImportJobSummary(totalRows.get(),
-                                         succeeded.get(),
-                                         failed.get());
-
             importJobRepository.markFailed(jobId,
                                            Instant.now(clock),
-                                           partialSummary);
+                                           counters.toSummary());
 
             LOG.errorf(e,
                        "Import job %s failed while processing file %s",
@@ -262,20 +253,14 @@ public class ImportProcessingService {
      * @param chunk          the rows to validate and persist/stage
      * @param unknownColumns header columns (if any) outside the recognized
      *                       schema, computed once per file
-     * @param totalRows      running total of rows processed so far; updated
-     *                       in place
-     * @param succeeded      running count of successfully persisted rows;
-     *                       updated in place
-     * @param failed         running count of staged rows; updated in place
+     * @param counters       the job's running totals; updated in place
      */
     private void processChunk(String jobId,
                               List<CsvRow> chunk,
                               Set<String> unknownColumns,
-                              AtomicInteger totalRows,
-                              AtomicInteger succeeded,
-                              AtomicInteger failed) {
+                              ImportRunCounters counters) {
         for (CsvRow row : chunk) {
-            totalRows.incrementAndGet();
+            counters.incrementTotal();
 
             RowOutcome outcome =
                     ImportRowValidator.validate(row, unknownColumns);
@@ -285,14 +270,14 @@ public class ImportProcessingService {
                     customerRecordRepository.insertNextVersion(success.recordId(),
                                                                success.recognizedFields(),
                                                                jobId);
-                    succeeded.incrementAndGet();
+                    counters.incrementSucceeded();
                 }
 
                 case RowOutcome.Failure failure -> {
                     stageRow(jobId,
                              row,
                              failure.errorDescription());
-                    failed.incrementAndGet();
+                    counters.incrementFailed();
                 }
             }
         }

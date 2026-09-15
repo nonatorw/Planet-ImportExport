@@ -39,6 +39,9 @@ public class BearerTokenTestSupport {
     String authServerUrl;
 
     /**
+     * Obtains a fresh access token from the Dev-Services-provisioned Keycloak
+     * realm via the client credentials grant.
+     *
      * @return a freshly obtained access token, valid for use as a bearer
      *         token against any {@code /api/v1/**} endpoint
      */

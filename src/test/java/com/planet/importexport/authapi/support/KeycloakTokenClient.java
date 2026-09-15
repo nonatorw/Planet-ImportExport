@@ -54,6 +54,7 @@ public final class KeycloakTokenClient {
      * @param authServerUrl the realm base URL, as Dev Services configured it
      * @param clientId      the OAuth2 client id registered in that realm
      * @param clientSecret  the OAuth2 client secret registered in that realm
+     *
      * @return the raw REST Assured {@link Response}, left unvalidated so
      *         callers can assert on status code and body shape themselves
      *         (used both for the "happy path" token request and for the
@@ -81,6 +82,7 @@ public final class KeycloakTokenClient {
      * @param authServerUrl the realm base URL, as Dev Services configured it
      * @param clientId      the OAuth2 client id registered in that realm
      * @param clientSecret  the OAuth2 client secret registered in that realm
+     *
      * @return the {@code access_token} field from the token response
      */
     public static String obtainAccessToken(String authServerUrl,

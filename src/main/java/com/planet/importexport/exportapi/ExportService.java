@@ -1,6 +1,5 @@
 package com.planet.importexport.exportapi;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -9,7 +8,6 @@ import jakarta.inject.Inject;
 import com.planet.importexport.customerrecord.CustomerRecordDocument;
 import com.planet.importexport.customerrecord.CustomerRecordRepository;
 import com.planet.importexport.exportapi.exception.UnknownExportColumnException;
-import com.planet.importexport.exportapi.exception.UnsupportedExportFormatException;
 import com.planet.importexport.exportapi.model.ExportFormat;
 import com.planet.importexport.exportapi.support.DelimitedTextExportWriter;
 import com.planet.importexport.exportapi.support.ExportRowProjector;
@@ -23,7 +21,7 @@ import com.planet.importexport.exportapi.validator.ExportColumnValidator;
  *
  * <p>Column validation (task C1) runs before any storage access, per design.md
  * section 4 step 1 ("on any unrecognized column, return 400 ... without
- * touching storage").
+ * touching storage").</p>
  */
 @ApplicationScoped
 public class ExportService {
@@ -31,6 +29,8 @@ public class ExportService {
     private final CustomerRecordRepository customerRecordRepository;
 
     /**
+     * Creates a new export service.
+     *
      * @param customerRecordRepository the repository queried for every stored
      *                                 record's current version
      */
@@ -40,36 +40,34 @@ public class ExportService {
     }
 
     /**
-     * @param format           the requested output format (raw request value;
-     *                         parsed/validated here)
+     * Validates the requested columns, projects the current version of every
+     * stored customer record, and serializes the resulting rows in the
+     * requested format.
+     *
+     * @param format           the requested output format, already parsed and
+     *                         validated by the caller
      * @param requestedColumns the requested columns, in the exact order the
      *                         output must honor
+     *
      * @return the serialized export content in the requested format
-     * @throws UnsupportedExportFormatException if {@code format} is not CSV,
-     *                                          TXT, or XLSX (task C5: legacy
-     *                                          XLS and any other unknown
-     *                                          format are rejected explicitly)
-     * @throws UnknownExportColumnException     if any requested column is
-     *                                          outside the recognized schema
-     *                                          (task C1)
+     *
+     * @throws UnknownExportColumnException if any requested column is outside
+     *                                      the recognized schema (task C1)
      */
-    public byte[] export(String format,
-                         List<String> requestedColumns) {
-        ExportFormat exportFormat = ExportFormat.fromRequestValue(format);
-
+    public byte[] exportColumns(ExportFormat format,
+                                List<String> requestedColumns) {
         ExportColumnValidator.validate(requestedColumns);
 
         List<CustomerRecordDocument> currentVersions =
                 customerRecordRepository.findAllCurrentVersions();
 
-        List<List<String>> rows = new ArrayList<>(currentVersions.size());
+        List<List<String>> rows =
+                currentVersions.stream()
+                               .map(record -> ExportRowProjector.project(record,
+                                                                         requestedColumns))
+                               .toList();
 
-        for (CustomerRecordDocument record : currentVersions) {
-            rows.add(ExportRowProjector.project(record,
-                                                requestedColumns));
-        }
-
-        return switch (exportFormat) {
+        return switch (format) {
             case CSV -> DelimitedTextExportWriter.writeCsv(requestedColumns,
                                                            rows);
 

@@ -12,7 +12,7 @@ import java.util.function.Supplier;
  * This class picks the simplest scheme matching that shape: a fixed
  * {@code "job-"} prefix followed by a random UUID, which guarantees practical
  * uniqueness without any coordination (no counter, no database round-trip
- * before the job document itself is inserted).
+ * before the job document itself is inserted).</p>
  *
  * <p>The random source is injected as a {@link Supplier} (defaulting to
  * {@link UUID#randomUUID()}) rather than called statically inline, so tests
@@ -39,8 +39,8 @@ public class ImportJobIdGenerator {
      * generated id (see class Javadoc).
      *
      * @param randomSource supplies the {@link UUID} appended after the
-     *                      {@value #PREFIX} prefix on each {@link #generate()}
-     *                      call.
+     *                     {@value #PREFIX} prefix on each {@link #generate()}
+     *                     call.
      */
     public ImportJobIdGenerator(Supplier<UUID> randomSource) {
         this.randomSource = randomSource;

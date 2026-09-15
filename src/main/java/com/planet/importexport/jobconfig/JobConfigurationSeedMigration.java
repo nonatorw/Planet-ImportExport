@@ -23,27 +23,27 @@ import io.quarkus.runtime.StartupEvent;
  * agents are not touching, per AGENTS.md's "ask first" boundary on new
  * dependencies. This migration therefore uses a CDI {@link StartupEvent}
  * observer: a check-and-insert that only creates the entry if absent, so it is
- * safe to run on every application start.
+ * safe to run on every application start.</p>
  *
  * <p>Idempotency semantics (ADR-0007 does not fix a numeric default, only that
  * it is "illustrative — not fixed by ADR-0007"): running this observer twice —
  * or on every restart — never duplicates or overwrites the entry. If an
  * operator has since changed {@code chunkSize} via the (future) Group D CRUD
  * API, this migration leaves that modified value untouched; it only ever
- * inserts the default when the key does not exist yet.
+ * inserts the default when the key does not exist yet.</p>
  */
 @ApplicationScoped
 public class JobConfigurationSeedMigration {
     private static final Logger LOG =
             Logger.getLogger(JobConfigurationSeedMigration.class);
 
+    private final Clock clock;
+    private final JobConfigurationRepository repository;
+
     static final String CHUNK_SIZE_KEY = "chunkSize";
     static final String CHUNK_SIZE_DEFAULT_VALUE = "500";
     static final String CHUNK_SIZE_DESCRIPTION =
             "Number of rows processed per batch during async import";
-
-    private final JobConfigurationRepository repository;
-    private final Clock clock;
 
     /**
      * CDI-injected constructor used in production, wiring a system UTC

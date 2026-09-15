@@ -37,6 +37,7 @@ public final class EmailValidator {
      *
      * @param email the raw string value from the source row; may be
      *              {@code null}
+     *
      * @return {@code true} if {@code email} matches
      *         {@code user@domain.tld}, {@code false} otherwise (including
      *         {@code null} input)

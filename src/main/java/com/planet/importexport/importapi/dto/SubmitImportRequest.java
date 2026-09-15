@@ -9,4 +9,7 @@ import jakarta.validation.constraints.NotBlank;
  * @param filePath the absolute or relative path (resolved on the server) of
  *                 the CSV file to import; must not be blank
  */
-public record SubmitImportRequest(@NotBlank(message = "filePath must not be blank") String filePath) {}
+public record SubmitImportRequest(
+    @NotBlank(message = "filePath must not be blank")
+    String filePath) {
+    }

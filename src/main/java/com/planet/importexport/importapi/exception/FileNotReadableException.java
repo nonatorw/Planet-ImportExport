@@ -9,11 +9,13 @@ package com.planet.importexport.importapi.exception;
  * <p>Deliberately does not include the underlying filesystem error message in
  * the exposed detail beyond the path itself — avoids leaking host filesystem
  * internals to API clients (per {@code @124-java-secure-coding}, secure
- * exception handling). </p>
+ * exception handling).</p>
  */
 public class FileNotReadableException extends RuntimeException {
 
     /**
+     * Creates a new exception for a submitted file path that could not be read.
+     *
      * @param filePath the submitted file path that could not be read; echoed
      *                 verbatim in the exception message since it is the only
      *                 detail the client-supplied request itself already

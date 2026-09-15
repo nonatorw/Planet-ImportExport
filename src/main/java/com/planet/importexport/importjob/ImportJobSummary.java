@@ -9,7 +9,7 @@ package com.planet.importexport.importjob;
  * record) so the BSON POJO codec Quarkus MongoDB Panache configures by default
  * can decode this as a nested document without extra codec registration,
  * matching the plain-field style already used by sibling document classes in
- * this codebase (e.g. {@code CustomerRecordDocument}).
+ * this codebase (e.g. {@code CustomerRecordDocument}).</p>
  */
 public class ImportJobSummary {
     /**
@@ -54,6 +54,8 @@ public class ImportJobSummary {
      * @return a new {@link ImportJobSummary} with every counter at zero.
      */
     public static ImportJobSummary empty() {
-        return new ImportJobSummary(0, 0, 0);
+        return new ImportJobSummary(0,
+                                    0,
+                                    0);
     }
 }

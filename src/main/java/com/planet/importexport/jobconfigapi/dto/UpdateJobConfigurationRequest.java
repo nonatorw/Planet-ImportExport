@@ -17,6 +17,9 @@ import com.planet.importexport.jobconfig.JobConfigurationValueType;
  * @param description the new description, or {@code null} to keep the
  *                    entry's current description
  */
-public record UpdateJobConfigurationRequest(@NotNull String value,
-                                            JobConfigurationValueType valueType,
-                                            String description) {}
+public record UpdateJobConfigurationRequest(
+    @NotNull
+    String value,
+    JobConfigurationValueType valueType,
+    String description) {
+    }

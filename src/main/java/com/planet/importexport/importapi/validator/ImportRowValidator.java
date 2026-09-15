@@ -15,7 +15,7 @@ import com.planet.importexport.importapi.model.RowOutcome;
  *
  * <p>Validation order (any one failure routes the whole row to staging —
  * {@code B6} explicitly requires this even when other columns in the same row
- * are otherwise fine):
+ * are otherwise fine):</p>
  *
  * <ol>
  *   <li>{@code B6} unknown header column: any column name in the file's header
@@ -31,7 +31,7 @@ import com.planet.importexport.importapi.model.RowOutcome;
  * ({@link ImportProcessingService}), not per row, since the header does not
  * change row to row; this class receives the already-detected unknown columns
  * (if any) to keep the per-row error description consistent with {@code B6}'s
- * required wording.
+ * required wording.</p>
  */
 public final class ImportRowValidator {
 
@@ -52,6 +52,7 @@ public final class ImportRowValidator {
      * @param unknownColumns header columns (if any) outside the recognized
      *                       schema — computed once per file by the caller,
      *                       per {@code B6}
+     *
      * @return {@link RowOutcome.Success} when every recognized, present field
      *         is valid; {@link RowOutcome.Failure} otherwise
      */
@@ -67,8 +68,7 @@ public final class ImportRowValidator {
 
         if (recordId == null
         ||  recordId.isBlank()) {
-            return new RowOutcome.Failure(
-                    "missing value for recognized field 'id'");
+            return new RowOutcome.Failure("missing value for recognized field 'id'");
         }
 
         Map<String, Object> recognizedFields = new LinkedHashMap<>();
@@ -81,9 +81,11 @@ public final class ImportRowValidator {
             String columnName = field.columnName();
 
             if (!row.valuesByColumnName().containsKey(columnName)) {
-                // Column not present in this file's header at all — nothing to
-                // validate or merge; ADR-0004's merge rule inherits it from
-                // the previous version.
+                /*
+                 * Column not present in this file's header at all — nothing to
+                 * validate or merge; ADR-0004's merge rule inherits it from
+                 * the previous version.
+                 */
                 continue;
             }
 

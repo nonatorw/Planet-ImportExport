@@ -11,6 +11,12 @@ import jakarta.ws.rs.core.Response;
 import com.planet.importexport.exportapi.dto.ExportRequest;
 import com.planet.importexport.exportapi.model.ExportFormat;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+
 import io.quarkus.security.Authenticated;
 
 /**
@@ -20,17 +26,22 @@ import io.quarkus.security.Authenticated;
  * media type; the file content itself is the response body (design.md section
  * 2: "body = file content in requested format").
  * No {@code Content-Disposition}/filename is mandated by the spec, so none is
- * set here.
+ * set here.</p>
  *
  * <p>{@code E1} (ADR-0006): requires a valid OIDC bearer token. See
  * {@link Authenticated} usage rationale on
- * {@link com.planet.importexport.importapi.ImportResource}.
+ * {@link com.planet.importexport.importapi.ImportResource}. The class-level
+ * {@link SecurityRequirement} mirrors that in the OpenAPI contract, referencing
+ * the {@code bearerAuth} scheme declared on
+ * {@code com.planet.importexport package-info.java}.</p>
  */
 @Path("/api/v1/exports")
 @Consumes(MediaType.APPLICATION_JSON)
 @Authenticated
+@SecurityRequirement(name = "bearerAuth")
+@Tag(name = "Exports",
+     description = "Data export in CSV, TXT, or XLSX format")
 public class ExportResource {
-
     private static final String TEXT_CSV = "text/csv";
     private static final String TEXT_PLAIN = "text/plain";
     private static final String XLSX_MEDIA_TYPE =
@@ -39,6 +50,8 @@ public class ExportResource {
     private final ExportService exportService;
 
     /**
+     * Creates a new export resource.
+     *
      * @param exportService orchestrates validation, projection, and
      *                      serialization for an export request
      */
@@ -48,29 +61,53 @@ public class ExportResource {
     }
 
     /**
+     * Serializes the current version of every stored customer record into the
+     * requested format and columns, returning the file content as the response
+     * body.
+     *
      * @param request the validated request body carrying the requested format
      *                and column list
+     *
      * @return {@code 200 OK} with the serialized export content and a
      *         {@code Content-Type} matching the requested format
      */
     @POST
-    public Response export(@Valid ExportRequest request) {
-        byte[] content = exportService.export(request.format(),
-                                              request.columns());
+    @Operation(summary = "Export data",
+               description = "Serializes the requested columns into the " +
+                             "requested format (CSV, TXT, or XLSX) and " +
+                             "returns the file content as the response body.")
+    @APIResponses({
+        @APIResponse(responseCode = "200",
+                     description = "Export produced successfully; body is " +
+                                   "the file content in the requested format"),
+        @APIResponse(responseCode = "400",
+                     description = "The request body failed validation, " +
+                                   "named an unrecognized column, or " +
+                                   "requested an unsupported format " +
+                                   "(including legacy XLS)")
+    })
+    public Response exportRequestedColumns(@Valid ExportRequest request) {
+        ExportFormat format =
+                ExportFormat.fromRequestValue(request.format());
 
-        String mediaType = mediaTypeFor(request.format());
+        byte[] content =
+                exportService.exportColumns(format,
+                                            request.columns());
 
         return Response.ok(content)
-                       .type(mediaType)
+                       .type(mediaTypeFor(format))
                        .build();
     }
 
-    private static String mediaTypeFor(String requestedFormat) {
-        // request.format() has already been validated by ExportService.export
-        // (via ExportFormat.fromRequestValue) by the time this is called, so
-        // re-parsing here is safe.
-        ExportFormat format = ExportFormat.fromRequestValue(requestedFormat);
-
+    /**
+     * Maps an export format to its HTTP {@code Content-Type}.
+     *
+     * @param format the export format to map; already validated by
+     *               {@link ExportService#export} by the time this is called
+     *
+     * @return the media type to use for the response body.
+     */
+    private static String mediaTypeFor(ExportFormat format) {
         return switch (format) {
             case CSV -> TEXT_CSV;
             case TXT -> TEXT_PLAIN;

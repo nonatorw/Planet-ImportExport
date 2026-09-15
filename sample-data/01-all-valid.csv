@@ -1,0 +1,11 @@
+id,name,email,age,country,phone
+1001,Alice Johnson,alice.johnson@example.com,29,USA,+1-202-555-0143
+1002,Bruno Silva,bruno.silva@example.com.br,34,Brazil,+55-21-98888-1234
+1003,Chen Wei,chen.wei@example.cn,41,China,+86-10-5555-0192
+1004,Diana Petrov,diana.petrov@example.ru,25,Russia,+7-495-555-0110
+1005,Emeka Okafor,emeka.okafor@example.ng,38,Nigeria,+234-1-555-0177
+1006,Fatima Al-Sayed,fatima.alsayed@example.eg,30,Egypt,+20-2-5555-0166
+1007,Giulia Romano,giulia.romano@example.it,27,Italy,+39-06-5555-0188
+1008,Hiro Tanaka,hiro.tanaka@example.jp,45,Japan,+81-3-5555-0199
+1009,Ingrid Larsen,ingrid.larsen@example.no,33,Norway,+47-22-55-01-22
+1010,Javier Morales,javier.morales@example.mx,22,Mexico,+52-55-5555-0144

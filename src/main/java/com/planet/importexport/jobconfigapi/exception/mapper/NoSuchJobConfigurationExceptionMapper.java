@@ -23,7 +23,10 @@ public class NoSuchJobConfigurationExceptionMapper
         implements ExceptionMapper<NoSuchElementException> {
 
     /**
+     * Maps a {@link NoSuchElementException} to a {@code 404 Not Found}.
+     *
      * @param exception the caught {@link NoSuchElementException}
+     *
      * @return a {@code 404 Not Found} JSON response
      */
     @Override

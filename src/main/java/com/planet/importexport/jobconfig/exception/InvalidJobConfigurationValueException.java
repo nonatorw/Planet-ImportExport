@@ -5,9 +5,11 @@ import com.planet.importexport.jobconfig.JobConfigurationValueType;
 /**
  * Thrown when a job configuration entry's {@code value} does not parse
  * according to its declared {@code valueType} (ADR-0007, write-time
- * validation). This is an application-level (unchecked) validation failure,
- * not an infrastructure/Mongo error — callers (e.g. the future Group D REST
- * layer) are expected to translate it into their own transport-specific error
+ * validation).
+ *
+ * This is an application-level (unchecked) validation failure, not an
+ * infrastructure/Mongo error — callers (e.g. the future Group D REST layer)
+ * are expected to translate it into their own transport-specific error
  * response; this exception carries no HTTP concern itself.
  */
 public class InvalidJobConfigurationValueException extends RuntimeException {
@@ -52,6 +54,7 @@ public class InvalidJobConfigurationValueException extends RuntimeException {
      * @param key       the configuration key whose value failed validation
      * @param valueType the declared type {@code value} was validated against
      * @param value     the raw, string-encoded value that failed to parse
+     *
      * @return a human-readable description of the validation failure
      */
     private static String message(String key,

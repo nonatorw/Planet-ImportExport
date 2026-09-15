@@ -24,14 +24,21 @@ public class DuplicateJobConfigurationKeyExceptionMapper
         implements ExceptionMapper<MongoWriteException> {
 
     /**
+     * Maps a duplicate-key {@link MongoWriteException} to a {@code 409
+     * Conflict}, rethrowing any other write-failure category unchanged.
+     *
      * @param exception the caught {@link MongoWriteException}
+     *
      * @return a {@code 409 Conflict} JSON response when the failure is a
      *         duplicate-key write; the same exception rethrown unchanged for
      *         any other {@link MongoWriteException} category
      */
     @Override
     public Response toResponse(MongoWriteException exception) {
-        if (ErrorCategory.fromErrorCode(exception.getCode()) != ErrorCategory.DUPLICATE_KEY) {
+        ErrorCategory errorCategory =
+                ErrorCategory.fromErrorCode(exception.getCode());
+
+        if (!ErrorCategory.DUPLICATE_KEY.equals(errorCategory)) {
             throw exception;
         }
 

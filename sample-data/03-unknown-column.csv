@@ -1,0 +1,4 @@
+id,name,email,age,country,phone,loyalty_tier
+3001,Uma Sharma,uma.sharma@example.in,29,India,+91-22-5555-0188,Gold
+3002,Victor Hugo,victor.hugo@example.fr,52,France,+33-1-5555-0199,Silver
+3003,Wanjiru Kamau,wanjiru.kamau@example.ke,31,Kenya,+254-20-555-0177,Bronze

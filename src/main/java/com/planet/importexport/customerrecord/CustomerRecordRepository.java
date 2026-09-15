@@ -18,15 +18,18 @@ import io.quarkus.runtime.StartupEvent;
 
 import com.mongodb.client.model.IndexOptions;
 
+import static java.util.Map.entry;
+
 /**
  * Repository for the {@code customer_records} collection (design.md section
  * 1.1; ADR-0001; ADR-0004).
  *
  * <p>Every write is an insert of a brand-new version document; this repository
- * never updates or deletes an existing version.
+ * never updates or deletes an existing version.</p>
  */
 @ApplicationScoped
-public class CustomerRecordRepository implements PanacheMongoRepository<CustomerRecordDocument> {
+public class CustomerRecordRepository
+        implements PanacheMongoRepository<CustomerRecordDocument> {
 
     /**
      * Ensures the indexes design.md section 1.1 requires: a unique compound
@@ -38,19 +41,28 @@ public class CustomerRecordRepository implements PanacheMongoRepository<Customer
      * <p>{@code createIndex} is idempotent — recreating an index with the same
      * keys/options on every startup is a no-op once it already exists, which
      * is the standard Quarkus MongoDB Panache idiom for index setup (no
-     * declarative index annotation exists in quarkus-mongodb-panache). </p>
+     * declarative index annotation exists in quarkus-mongodb-panache).</p>
      *
      * @param startupEvent the CDI startup event that triggers index creation;
      *                     unused beyond signaling application startup
      */
     void ensureIndexes(@Observes StartupEvent startupEvent) {
-        mongoCollection().createIndex(new Document("id", 1)
-                                              .append("version", 1),
-                                      new IndexOptions()
-                                              .unique(true));
+        Map<String, Integer> idAscendingVersionAscending =
+                new LinkedHashMap<>();
+        idAscendingVersionAscending.put("id", 1);
+        idAscendingVersionAscending.put("version", 1);
 
-        mongoCollection().createIndex(new Document("id", 1)
-                                              .append("version", -1));
+        Map<String, Integer> idAscendingVersionDescending =
+                new LinkedHashMap<>();
+        idAscendingVersionDescending.put("id", 1);
+        idAscendingVersionDescending.put("version", -1);
+
+        mongoCollection().createIndex(
+                new Document(idAscendingVersionAscending),
+                new IndexOptions().unique(true));
+
+        mongoCollection().createIndex(
+                new Document(idAscendingVersionDescending));
     }
 
     /**
@@ -58,11 +70,14 @@ public class CustomerRecordRepository implements PanacheMongoRepository<Customer
      * highest {@code version} for that id (design.md section 1.1; ADR-0001).
      *
      * @param recordId the business identity key
+     *
      * @return the highest-version document for {@code recordId}, or empty if
      *         no version of it exists yet
      */
     public Optional<CustomerRecordDocument> findCurrentVersion(String recordId) {
-        return find("id", Sort.descending("version"), recordId).firstResultOptional();
+        return find("id",
+                    Sort.descending("version"),
+                    recordId).firstResultOptional();
     }
 
     /**
@@ -70,11 +85,15 @@ public class CustomerRecordRepository implements PanacheMongoRepository<Customer
      *
      * @param recordId the business identity key
      * @param version  the version number to fetch
+     *
      * @return the matching document, or empty if no such {@code (recordId,
      *         version)} pair exists
      */
-    public Optional<CustomerRecordDocument> findVersion(String recordId, int version) {
-        return find("id = ?1 and version = ?2", recordId, version).firstResultOptional();
+    public Optional<CustomerRecordDocument> findVersion(String recordId,
+                                                        int version) {
+        return find("id = ?1 and version = ?2",
+                    recordId,
+                    version).firstResultOptional();
     }
 
     /**
@@ -91,29 +110,40 @@ public class CustomerRecordRepository implements PanacheMongoRepository<Customer
      * {@code $first}, then replace each group's root with that document.
      * - The supporting {@code (id, version desc)} index created by
      * {@link #ensureIndexes(StartupEvent)} lets the {@code $sort} stage avoid
-     * an in-memory sort for large collections.
+     * an in-memory sort for large collections.</p>
      *
      * @return the current version of every distinct {@code id}, in no
      *         particular order; callers needing a specific output order (e.g.
      *         export) must sort/project as needed
      */
     public List<CustomerRecordDocument> findAllCurrentVersions() {
-        List<Document> pipeline = List.of(
-            new Document("$sort",
-                         new Document("version", -1)),
+        Document sortByVersionDescending =
+                new Document("$sort",
+                             Map.of("version", -1));
 
-            new Document("$group",
-                         new Document("_id", "$id")
-                                 .append("doc",
-                                         new Document("$first",
-                                                      "$$ROOT"))),
+        Document firstDocumentInGroup =
+                new Document("$first",
+                             "$$ROOT");
 
-            new Document("$replaceRoot",
-                         new Document("newRoot",
-                                      "$doc"))
-        );
+        Document groupByIdKeepingFirst =
+                new Document("$group",
+                             Map.ofEntries(entry("_id",
+                                                 "$id"),
+                                           entry("doc",
+                                                 firstDocumentInGroup)));
 
-        List<CustomerRecordDocument> currentVersions = new ArrayList<>();
+        Document replaceRootWithGroupedDocument =
+                new Document("$replaceRoot",
+                             Map.of("newRoot",
+                                    "$doc"));
+
+        List<Document> pipeline =
+                List.of(sortByVersionDescending,
+                        groupByIdKeepingFirst,
+                        replaceRootWithGroupedDocument);
+
+        List<CustomerRecordDocument> currentVersions =
+                new ArrayList<>();
 
         mongoCollection().aggregate(pipeline)
                          .forEach(currentVersions::add);
@@ -132,18 +162,20 @@ public class CustomerRecordRepository implements PanacheMongoRepository<Customer
      * {@code id} at a time (ADR-0003's whole-job serialization gate,
      * implemented outside this repository) — this method performs a plain
      * read-then-insert with no optimistic-locking retry, which is safe only
-     * under that external serialization guarantee.
+     * under that external serialization guarantee.</p>
      *
      * @param recordId                 the business identity key
      * @param incomingRecognizedFields the recognized fields present in the
      *                                 newly imported row
      * @param sourceJobId              the import job creating this version
+     *
      * @return the newly inserted version document
      */
     public CustomerRecordDocument insertNextVersion(String recordId,
                                                     Map<String, Object> incomingRecognizedFields,
                                                     String sourceJobId) {
-        Optional<CustomerRecordDocument> currentVersion = findCurrentVersion(recordId);
+        Optional<CustomerRecordDocument> currentVersion =
+                findCurrentVersion(recordId);
 
         int nextVersion =
                 currentVersion.map(document -> document.version + 1)

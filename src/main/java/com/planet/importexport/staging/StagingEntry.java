@@ -17,7 +17,7 @@ import io.quarkus.mongodb.panache.common.MongoEntity;
  * rejects separate collections/subtypes per category).
  *
  * <p>Matches design.md section 1.2 exactly: {@code jobId}, {@code rowId},
- * {@code rowData}, {@code errorDescription}, {@code processedAt}.
+ * {@code rowData}, {@code errorDescription}, {@code processedAt}.</p>
  */
 @MongoEntity(collection = "staging_entries")
 public class StagingEntry {

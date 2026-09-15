@@ -11,16 +11,12 @@ import com.planet.importexport.jobconfig.exception.InvalidJobConfigurationValueE
 import com.planet.importexport.mongo.FlapdoodleMongoTestResource;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Integration tests for {@link JobConfigurationRepository} against the
@@ -34,22 +30,32 @@ class JobConfigurationRepositoryIT {
     @Inject
     JobConfigurationRepository repository;
 
-    // The Quarkus test context (including JobConfigurationSeedMigration's
-    // @Observes StartupEvent, which seeds "chunkSize" on first boot) is shared
-    // across the whole suite, not per test method.
-    // Without this @BeforeEach, whichever test runs first after startup would
-    // with that seeded entry (JUnit5 does not guarantee method execution order
-    // by default).
+    /*
+     * The Quarkus test context (including JobConfigurationSeedMigration's
+     * @Observes StartupEvent, which seeds "chunkSize" on first boot) is shared
+     * across the whole suite, not per test method.
+     * Without this @BeforeEach, whichever test runs first after startup would
+     * with that seeded entry (JUnit5 does not guarantee method execution order
+     * by default).
+     */
     @BeforeEach
     void setUp() {
         repository.deleteAll();
     }
 
+    /**
+     * Clears every configuration entry after each test, so one test's
+     * writes cannot leak into the next.
+     */
     @AfterEach
     void cleanup() {
         repository.deleteAll();
     }
 
+    /**
+     * An entry inserted through the repository can be found back by its key,
+     * with every field (value, valueType, description) round-tripped intact.
+     */
     @Test
     void insertAndFindByKey_roundTripsAllFields() {
         JobConfigurationEntry entry =
@@ -64,18 +70,35 @@ class JobConfigurationRepositoryIT {
         Optional<JobConfigurationEntry> found =
                 repository.findByKey("chunkSize");
 
-        assertTrue(found.isPresent());
-        assertEquals("chunkSize", found.get().key);
-        assertEquals("500", found.get().value);
-        assertEquals(JobConfigurationValueType.INTEGER, found.get().valueType);
-        assertEquals("batch size", found.get().description);
+        Assertions.assertTrue(found.isPresent());
+
+        Assertions.assertEquals("chunkSize",
+                                found.get().key);
+
+        Assertions.assertEquals("500",
+                                found.get().value);
+
+        Assertions.assertEquals(JobConfigurationValueType.INTEGER,
+                                found.get().valueType);
+
+        Assertions.assertEquals("batch size",
+                                found.get().description);
     }
 
+    /**
+     * Looking up a key with no stored entry returns an empty result rather
+     * than throwing.
+     */
     @Test
     void findByKey_returnsEmpty_whenAbsent() {
-        assertTrue(repository.findByKey("doesNotExist").isEmpty());
+        Assertions.assertTrue(repository.findByKey("doesNotExist")
+                                        .isEmpty());
     }
 
+    /**
+     * Listing all entries returns every entry that has been inserted, not
+     * just the most recently inserted one.
+     */
     @Test
     void listAll_returnsEveryEntry() {
         repository.insert(
@@ -95,9 +118,14 @@ class JobConfigurationRepositoryIT {
         List<JobConfigurationEntry> all =
                 repository.listAll();
 
-        assertEquals(2, all.size());
+        Assertions.assertEquals(2,
+                                all.size());
     }
 
+    /**
+     * Updating an existing entry's value and description persists both new
+     * values, validated against the (re-supplied) declared type.
+     */
     @Test
     void update_changesValueAndRevalidatesAgainstNewType() {
         repository.insert(
@@ -116,10 +144,16 @@ class JobConfigurationRepositoryIT {
                 repository.findByKey("chunkSize")
                           .orElseThrow();
 
-        assertEquals("1000", updated.value);
-        assertEquals("updated description", updated.description);
+        Assertions.assertEquals("1000",
+                                updated.value);
+        Assertions.assertEquals("updated description",
+                                updated.description);
     }
 
+    /**
+     * Updating an entry with a value inconsistent with its declared type is
+     * rejected, and the previously stored value is left untouched.
+     */
     @Test
     void update_rejectsValueInconsistentWithDeclaredType() {
         repository.insert(
@@ -129,28 +163,41 @@ class JobConfigurationRepositoryIT {
                                           "d1",
                                           Instant.now()));
 
-        assertThrows(InvalidJobConfigurationValueException.class,
-                     () -> repository.update("chunkSize",
-                                             "not-a-number",
-                                             JobConfigurationValueType.INTEGER,
-                                             "d1"));
+        Assertions.assertThrows(
+            InvalidJobConfigurationValueException.class,
+            () -> repository.update("chunkSize",
+                                    "not-a-number",
+                                    JobConfigurationValueType.INTEGER,
+                                    "d1"));
 
-        // The write is rejected before persisting — the original value must
-        // remain untouched.
-        assertEquals("500", repository.findByKey("chunkSize")
-                                               .orElseThrow()
-                                               .value);
+        /*
+         * The write is rejected before persisting — the original value must
+          remain untouched.
+         */
+        Assertions.assertEquals("500",
+                                repository.findByKey("chunkSize")
+                                          .orElseThrow()
+                                          .value);
     }
 
+    /**
+     * Updating a key with no stored entry throws {@link NoSuchElementException}
+     * instead of silently creating one.
+     */
     @Test
     void update_throwsNoSuchElementException_whenKeyAbsent() {
-        assertThrows(NoSuchElementException.class,
-                     () -> repository.update("doesNotExist",
-                                             "1",
-                                             JobConfigurationValueType.INTEGER,
-                                             "d"));
+        Assertions.assertThrows(
+            NoSuchElementException.class,
+            () -> repository.update("doesNotExist",
+                                    "1",
+                                    JobConfigurationValueType.INTEGER,
+                                    "d"));
     }
 
+    /**
+     * Deleting an existing key reports success and leaves no trace of the
+     * entry behind.
+     */
     @Test
     void deleteByKey_removesEntry() {
         repository.insert(
@@ -163,15 +210,23 @@ class JobConfigurationRepositoryIT {
         boolean deleted =
                 repository.deleteByKey("chunkSize");
 
-        assertTrue(deleted);
-        assertTrue(repository.findByKey("chunkSize").isEmpty());
+        Assertions.assertTrue(deleted);
+        Assertions.assertTrue(repository.findByKey("chunkSize").isEmpty());
     }
 
+    /**
+     * Deleting a key with no stored entry returns {@code false} rather than
+     * throwing.
+     */
     @Test
     void deleteByKey_returnsFalse_whenAbsent() {
-        assertFalse(repository.deleteByKey("doesNotExist"));
+        Assertions.assertFalse(repository.deleteByKey("doesNotExist"));
     }
 
+    /**
+     * Reading an {@code INTEGER}-typed entry's value through
+     * {@code getIntValue} returns it parsed as an {@code int}.
+     */
     @Test
     void getIntValue_parsesIntegerTypedEntry() {
         repository.insert(
@@ -181,12 +236,18 @@ class JobConfigurationRepositoryIT {
                                           "d1",
                                           Instant.now()));
 
-        assertEquals(500, repository.getIntValue("chunkSize"));
+        Assertions.assertEquals(500,
+                                repository.getIntValue("chunkSize"));
     }
 
+    /**
+     * Reading an integer value for a key with no stored entry throws
+     * {@link NoSuchElementException} instead of returning a default.
+     */
     @Test
     void getIntValue_throwsNoSuchElementException_whenKeyAbsent() {
-        assertThrows(NoSuchElementException.class,
-                     () -> repository.getIntValue("doesNotExist"));
+        Assertions.assertThrows(
+            NoSuchElementException.class,
+            () -> repository.getIntValue("doesNotExist"));
     }
 }

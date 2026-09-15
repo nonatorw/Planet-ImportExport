@@ -3,14 +3,13 @@ package com.planet.importexport.mongo;
 import jakarta.inject.Inject;
 
 import org.bson.Document;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 
 import com.mongodb.client.MongoClient;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Scaffolding-level smoke test (Group A0.2): confirms the Flapdoodle-backed
@@ -24,12 +23,18 @@ class FlapdoodleMongoTestResourceIT {
     @Inject
     MongoClient mongoClient;
 
+    /**
+     * The embedded MongoDB instance responds to an admin {@code ping}
+     * command with {@code ok: 1}, confirming it actually started and is
+     * reachable.
+     */
     @Test
     void embeddedMongoRespondsToPing() {
         Document result = mongoClient.getDatabase("admin")
                                      .runCommand(new Document("ping",
                                                               1));
 
-        assertEquals(1.0, result.getDouble("ok"));
+        Assertions.assertEquals(1.0,
+                                result.getDouble("ok"));
     }
 }

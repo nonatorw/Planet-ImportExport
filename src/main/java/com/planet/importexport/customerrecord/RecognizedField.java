@@ -14,7 +14,7 @@ import java.util.Arrays;
  * Export (Group C) capabilities may define their own copies of this recognized
  * column list rather than share this one, to avoid a cross-group
  * file-contention point; nothing in the design mandates a single shared
- * constant.
+ * constant.</p>
  */
 public enum RecognizedField {
     NAME("name"),
@@ -28,7 +28,8 @@ public enum RecognizedField {
     /**
      * Associates this constant with its recognized-schema field name.
      *
-     * @param fieldName the field name as it appears in {@link CustomerRecordDocument#fields}
+     * @param fieldName the field name as it appears in
+     *                  {@link CustomerRecordDocument#fields}
      */
     RecognizedField(String fieldName) {
         this.fieldName = fieldName;
@@ -48,6 +49,7 @@ public enum RecognizedField {
      * fields.
      *
      * @param candidateFieldName the field name to check
+     *
      * @return {@code true} if {@code candidateFieldName} equals the
      *         {@link #fieldName()} of some constant of this enum, {@code false}
      *         otherwise

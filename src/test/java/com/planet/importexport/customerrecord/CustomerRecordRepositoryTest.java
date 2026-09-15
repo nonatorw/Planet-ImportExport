@@ -11,6 +11,7 @@ import com.planet.importexport.mongo.FlapdoodleMongoTestResource;
 
 import org.bson.Document;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import io.quarkus.panache.common.Sort;
@@ -19,11 +20,6 @@ import io.quarkus.test.junit.QuarkusTest;
 
 import com.mongodb.ErrorCategory;
 import com.mongodb.MongoWriteException;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Integration test proving {@link CustomerRecordRepository} persistence and
@@ -43,6 +39,10 @@ class CustomerRecordRepositoryTest {
         repository.deleteAll();
     }
 
+    /**
+     * Inserting a record for an id with no prior version creates version 1
+     * with exactly the given fields.
+     */
     @Test
     void insertNextVersion_withNoPriorVersion_insertsVersion1AsGiven() {
         CustomerRecordDocument inserted =
@@ -51,12 +51,19 @@ class CustomerRecordRepositoryTest {
                                                     "country", "Portugal"),
                                              "job-1");
 
-        assertEquals(1, inserted.version);
-        assertEquals("John Smith", inserted.fields.get("name"));
-        assertEquals("Portugal", inserted.fields.get("country"));
-        assertEquals("job-1", inserted.sourceJobId);
+        Assertions.assertEquals(1, inserted.version);
+
+        Assertions.assertEquals("John Smith", inserted.fields.get("name"));
+
+        Assertions.assertEquals("Portugal", inserted.fields.get("country"));
+
+        Assertions.assertEquals("job-1", inserted.sourceJobId);
     }
 
+    /**
+     * Re-importing an existing id creates a new version 2 while leaving
+     * version 1's stored fields untouched.
+     */
     @Test
     void insertNextVersion_reImportedId_createsVersion2WithoutMutatingVersion1() {
         repository.insertNextVersion("1",
@@ -69,16 +76,23 @@ class CustomerRecordRepositoryTest {
                                              Map.of("phone", "+351910000000"),
                                              "job-2");
 
-        assertEquals(2, secondVersion.version);
+        Assertions.assertEquals(2, secondVersion.version);
 
         Optional<CustomerRecordDocument> version1 =
                 repository.findVersion("1", 1);
 
-        assertTrue(version1.isPresent());
-        assertEquals("John Smith", version1.get().fields.get("name"));
-        assertFalse(version1.get().fields.containsKey("phone"));
+        Assertions.assertTrue(version1.isPresent());
+
+        Assertions.assertEquals("John Smith",
+                                version1.get().fields.get("name"));
+
+        Assertions.assertFalse(version1.get().fields.containsKey("phone"));
     }
 
+    /**
+     * A field absent from a later import for the same id is inherited from
+     * the previous version rather than cleared.
+     */
     @Test
     void insertNextVersion_fieldAbsentFromLaterFile_isInheritedFromPriorVersion() {
         repository.insertNextVersion("1",
@@ -91,10 +105,16 @@ class CustomerRecordRepositoryTest {
                                              Map.of("country", "Spain"),
                                              "job-2");
 
-        assertEquals("John Smith", secondVersion.fields.get("name"));
-        assertEquals("Spain", secondVersion.fields.get("country"));
+        Assertions.assertEquals("John Smith",
+                                secondVersion.fields.get("name"));
+        Assertions.assertEquals("Spain",
+                                secondVersion.fields.get("country"));
     }
 
+    /**
+     * The current version for an id is the document with the highest
+     * version number, regardless of insertion order.
+     */
     @Test
     void findCurrentVersion_returnsHighestVersionDocument() {
         repository.insertNextVersion("1",
@@ -110,17 +130,29 @@ class CustomerRecordRepositoryTest {
         Optional<CustomerRecordDocument> current =
                 repository.findCurrentVersion("1");
 
-        assertTrue(current.isPresent());
-        assertEquals(3, current.get().version);
-        assertEquals("Spain", current.get().fields.get("country"));
+        Assertions.assertTrue(current.isPresent());
+
+        Assertions.assertEquals(3,
+                                current.get().version);
+
+        Assertions.assertEquals("Spain",
+                                current.get().fields.get("country"));
     }
 
+    /**
+     * Looking up the current version of an id with no stored record returns
+     * an empty result rather than throwing.
+     */
     @Test
     void findCurrentVersion_unknownId_returnsEmpty() {
-        assertTrue(repository.findCurrentVersion("does-not-exist")
-                             .isEmpty());
+        Assertions.assertTrue(repository.findCurrentVersion("does-not-exist")
+                                        .isEmpty());
     }
 
+    /**
+     * Version numbers are tracked independently per id: inserting a new
+     * version for one id does not affect another id's current version.
+     */
     @Test
     void distinctIds_versionAcrossIds_doNotInterfere() {
         repository.insertNextVersion("1",
@@ -139,36 +171,54 @@ class CustomerRecordRepositoryTest {
         Optional<CustomerRecordDocument> currentForId2 =
                 repository.findCurrentVersion("2");
 
-        assertEquals(2, currentForId1.orElseThrow().version);
-        assertEquals(1, currentForId2.orElseThrow().version);
+        Assertions.assertEquals(2,
+                                currentForId1.orElseThrow().version);
+
+        Assertions.assertEquals(1,
+                                currentForId2.orElseThrow().version);
     }
 
+    /**
+     * The unique compound index on {@code (id, version)} rejects a direct
+     * insert that duplicates an existing version for the same id, even when
+     * bypassing the repository's own version-computation logic.
+     */
     @Test
     void uniqueCompoundIndex_onIdAndVersion_rejectsDuplicateVersionForSameId() {
         repository.insertNextVersion("1",
                                      Map.of("name", "John Smith"),
                                      "job-1");
 
-        // Bypass the repository's own version-computation to directly attempt
-        // a duplicate (id, version) pair, proving the unique compound index
-        // (design.md section 1.1) is the enforcement mechanism, not merely
-        // application-level convention.
+        /*
+         * Bypass the repository's own version-computation to directly attempt
+         * a duplicate (id, version) pair, proving the unique compound index
+         * (design.md section 1.1) is the enforcement mechanism, not merely
+         * application-level convention.
+         */
+        Document duplicateFields = new Document("name", "Someone Else");
+        Date createdAt = new Date();
+
         Document duplicateVersion1 =
                 new Document("id", "1")
                         .append("version", 1)
-                        .append("fields", new Document("name", "Someone Else"))
+                        .append("fields", duplicateFields)
                         .append("sourceJobId", "job-2")
-                        .append("createdAt", new Date());
+                        .append("createdAt", createdAt);
 
         MongoWriteException exception =
-                assertThrows(MongoWriteException.class,
+                Assertions.assertThrows(MongoWriteException.class,
                              () -> repository.mongoCollection()
                                              .withDocumentClass(Document.class)
                                              .insertOne(duplicateVersion1));
 
-        assertEquals(ErrorCategory.DUPLICATE_KEY, exception.getError().getCategory());
+        Assertions.assertEquals(ErrorCategory.DUPLICATE_KEY,
+                                exception.getError().getCategory());
     }
 
+    /**
+     * All stored versions of an id can be enumerated in ascending order,
+     * forming a strictly increasing, gapless sequence starting at 1.
+     */
     @Test
     void enumeratingAllVersions_forGivenId_isStrictlyIncreasingAndGapless() {
         repository.insertNextVersion("1",
@@ -186,9 +236,16 @@ class CustomerRecordRepositoryTest {
                                 Sort.ascending("version"), "1")
                           .list();
 
-        assertEquals(3, allVersions.size());
-        assertEquals(1, allVersions.get(0).version);
-        assertEquals(2, allVersions.get(1).version);
-        assertEquals(3, allVersions.get(2).version);
+        Assertions.assertEquals(3,
+                                allVersions.size());
+
+        Assertions.assertEquals(1,
+                                allVersions.get(0).version);
+
+        Assertions.assertEquals(2,
+                                allVersions.get(1).version);
+
+        Assertions.assertEquals(3,
+                                allVersions.get(2).version);
     }
 }

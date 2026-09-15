@@ -19,10 +19,11 @@ import com.planet.importexport.staging.StagingEntry;
  * @param stagingErrors every row staged for this job so far, in the order
  *                      returned by the repository
  */
-public record JobStatusResponse(String jobId,
-                                String status,
-                                JobSummaryResponse summary,
-                                List<StagingErrorResponse> stagingErrors) {
+public record JobStatusResponse(
+    String jobId,
+    String status,
+    JobSummaryResponse summary,
+    List<StagingErrorResponse> stagingErrors) {
 
     /**
      * Builds the response from the persisted job document and its associated
@@ -31,6 +32,7 @@ public record JobStatusResponse(String jobId,
      * @param job            the persisted {@code import_jobs} document
      * @param stagingEntries every staging entry currently associated with
      *                       {@code job}
+     *
      * @return the assembled response body
      */
     public static JobStatusResponse from(ImportJobDocument job,

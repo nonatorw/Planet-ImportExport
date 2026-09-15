@@ -20,7 +20,7 @@ import io.quarkus.panache.common.Sort;
  * e.g. {@code "job-abc123"}), not an {@link org.bson.types.ObjectId} —
  * {@code PanacheMongoRepositoryBase<Entity, Id>} is the Quarkus MongoDB
  * Panache extension point for a custom id type (see
- * {@code @415-frameworks-quarkus-mongodb}).
+ * {@code @415-frameworks-quarkus-mongodb}).</p>
  */
 @ApplicationScoped
 public class ImportJobRepository
@@ -31,6 +31,7 @@ public class ImportJobRepository
      * by {@code jobId}.
      *
      * @param jobId the externally-exposed job id (the document's {@code _id}).
+     *
      * @return the matching job, or {@link Optional#empty()} if none exists.
      */
     public Optional<ImportJobDocument> findByJobId(String jobId) {
@@ -75,15 +76,17 @@ public class ImportJobRepository
      *
      * @param jobId     the job to transition.
      * @param startedAt the instant to stamp as {@code startedAt}.
+     *
      * @return the updated job document.
+     *
      * @throws IllegalArgumentException if no job exists for {@code jobId}.
-     * @throws IllegalStateException if the job is not currently
-     *                               {@link ImportJobStatus#PENDING} —
-     *                               {@link ImportJobStatus#canTransitionTo(ImportJobStatus)}
-     *                               is the single source of truth for legal
-     *                               moves.
+     * @throws IllegalStateException    if the job is not currently
+     *         {@link ImportJobStatus#PENDING} —
+     *         {@link ImportJobStatus#canTransitionTo(ImportJobStatus)}
+     *         is the single source of truth for legal moves.
      */
-    public ImportJobDocument markRunning(String jobId, Instant startedAt) {
+    public ImportJobDocument markRunning(String jobId,
+                                         Instant startedAt) {
         ImportJobDocument job = requireJob(jobId);
         requireTransition(job, ImportJobStatus.RUNNING);
         job.status = ImportJobStatus.RUNNING;
@@ -101,10 +104,12 @@ public class ImportJobRepository
      * @param jobId       the job to transition.
      * @param completedAt the instant to stamp as {@code completedAt}.
      * @param summary     the final row-outcome counters for the job.
+     *
      * @return the updated job document.
+     *
      * @throws IllegalArgumentException if no job exists for {@code jobId}.
-     * @throws IllegalStateException if the job is not currently
-     *                               {@link ImportJobStatus#RUNNING}.
+     * @throws IllegalStateException    if the job is not currently
+     *                                  {@link ImportJobStatus#RUNNING}.
      */
     public ImportJobDocument markCompleted(String jobId,
                                            Instant completedAt,
@@ -128,10 +133,12 @@ public class ImportJobRepository
      * @param completedAt the instant to stamp as {@code completedAt}.
      * @param summary     the partial row-outcome counters known at the point
      *                    of failure.
+     *
      * @return the updated job document.
+     *
      * @throws IllegalArgumentException if no job exists for {@code jobId}.
-     * @throws IllegalStateException if the job is not currently
-     *                               {@link ImportJobStatus#RUNNING}.
+     * @throws IllegalStateException    if the job is not currently
+     *                                  {@link ImportJobStatus#RUNNING}.
      */
     public ImportJobDocument markFailed(String jobId,
                                         Instant completedAt,
@@ -150,13 +157,16 @@ public class ImportJobRepository
      * Looks up a job by {@code jobId} or throws if it does not exist.
      *
      * @param jobId the job id to look up.
+     *
      * @return the matching job document.
+     *
      * @throws IllegalArgumentException if no job exists for {@code jobId}.
      */
     private ImportJobDocument requireJob(String jobId) {
         Supplier<IllegalArgumentException> exceptionSupplier =
-                () -> new IllegalArgumentException("No import job found for jobId: " +
-                                                   jobId);
+                () -> new IllegalArgumentException(
+                        "No import job found for jobId: " + jobId);
+
         return findByJobId(jobId).orElseThrow(exceptionSupplier);
     }
 
@@ -166,8 +176,9 @@ public class ImportJobRepository
      *
      * @param job    the job whose current status is being validated.
      * @param target the status the job is about to move to.
-     * @throws IllegalStateException if {@code job.status} cannot legally
-     *                                move to {@code target}.
+     *
+     * @throws IllegalStateException if {@code job.status} cannot legally move
+     *                               to {@code target}.
      */
     private void requireTransition(ImportJobDocument job,
                                    ImportJobStatus target) {

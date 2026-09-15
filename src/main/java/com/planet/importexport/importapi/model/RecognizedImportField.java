@@ -29,10 +29,14 @@ public enum RecognizedImportField {
     COUNTRY("country"),
     PHONE("phone");
 
-    /** The exact CSV header column name this constant recognizes. */
+    /**
+     * The exact CSV header column name this constant recognizes.
+     */
     private final String columnName;
 
     /**
+     * Associates this constant with its recognized CSV header column name.
+     *
      * @param columnName the exact CSV header column name this constant
      *                   recognizes
      */
@@ -41,6 +45,8 @@ public enum RecognizedImportField {
     }
 
     /**
+     * Returns this constant's recognized CSV header column name.
+     *
      * @return the exact CSV header column name this constant recognizes
      */
     public String columnName() {
@@ -48,7 +54,10 @@ public enum RecognizedImportField {
     }
 
     /**
+     * Checks whether a header column name matches a recognized field.
+     *
      * @param candidateColumnName a header column name to test
+     *
      * @return {@code true} if {@code candidateColumnName} matches a
      *         recognized field's {@link #columnName()}
      */
@@ -57,7 +66,10 @@ public enum RecognizedImportField {
     }
 
     /**
+     * Looks up the recognized field constant matching a header column name.
+     *
      * @param candidateColumnName a header column name to look up
+     *
      * @return the matching constant, or {@link Optional#empty()} if
      *         {@code candidateColumnName} matches no recognized field
      */

@@ -19,7 +19,7 @@ import de.flapdoodle.reverse.TransitionWalker;
  * <p>Quarkus MongoDB Dev Services is disabled
  * ({@code quarkus.mongodb.devservices.enabled=false}, see
  * {@code application.yml}) so this resource is the sole source of the
- * test-time connection string.
+ * test-time connection string.</p>
  *
  * <p>Flapdoodle's OS detection ({@code de.flapdoodle.os}) ships a fixed table
  * of known Linux distribution releases and does not yet know every current
@@ -32,7 +32,7 @@ import de.flapdoodle.reverse.TransitionWalker;
  * and only if not already provided by the caller/CI — to the newest Ubuntu
  * release Flapdoodle 4.24.0 / de.flapdoodle.os 1.10.1 recognizes, which
  * remains binary-compatible with newer Ubuntu point releases for MongoDB's
- * purposes.
+ * purposes.</p>
  */
 public class FlapdoodleMongoTestResource
         implements QuarkusTestResourceLifecycleManager {
@@ -45,6 +45,14 @@ public class FlapdoodleMongoTestResource
 
     private TransitionWalker.ReachedState<RunningMongodProcess> runningMongod;
 
+    /**
+     * Starts the embedded MongoDB instance, defensively setting Flapdoodle's
+     * OS-override system property first (see class Javadoc), and returns the
+     * connection string property Quarkus should use for this test run.
+     *
+     * @return a single-entry map providing
+     *         {@code quarkus.mongodb.connection-string}
+     */
     @Override
     public Map<String, String> start() {
         if (System.getProperty(OS_OVERRIDE_PROPERTY) == null) {
@@ -63,6 +71,10 @@ public class FlapdoodleMongoTestResource
                       connectionString);
     }
 
+    /**
+     * Stops the embedded MongoDB instance started by {@link #start()}, if
+     * one is running.
+     */
     @Override
     public void stop() {
         if (runningMongod != null) {

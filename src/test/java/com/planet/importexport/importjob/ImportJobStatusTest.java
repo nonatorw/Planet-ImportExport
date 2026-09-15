@@ -1,10 +1,8 @@
 package com.planet.importexport.importjob;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Pure unit tests for the {@code import_jobs} status lifecycle (design.md
@@ -15,13 +13,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * container-free logic).
  */
 class ImportJobStatusTest {
+    /**
+     * Every documented status transition is allowed.
+     */
     @ParameterizedTest
     @CsvSource({"PENDING, RUNNING", "RUNNING, COMPLETED", "RUNNING, FAILED"})
     void allowsDocumentedTransitions(ImportJobStatus from,
                                      ImportJobStatus to) {
-        assertTrue(from.canTransitionTo(to));
+        Assertions.assertTrue(from.canTransitionTo(to));
     }
 
+    /**
+     * Every transition not explicitly documented as allowed — including a
+     * status transitioning to itself and any move away from a terminal
+     * status — is rejected.
+     */
     @ParameterizedTest
     @CsvSource({
         "PENDING, COMPLETED",
@@ -38,7 +44,8 @@ class ImportJobStatusTest {
         "FAILED, PENDING",
         "FAILED, FAILED"
     })
-    void rejectsUndocumentedTransitions(ImportJobStatus from, ImportJobStatus to) {
-        assertFalse(from.canTransitionTo(to));
+    void rejectsUndocumentedTransitions(ImportJobStatus from,
+                                        ImportJobStatus to) {
+        Assertions.assertFalse(from.canTransitionTo(to));
     }
 }

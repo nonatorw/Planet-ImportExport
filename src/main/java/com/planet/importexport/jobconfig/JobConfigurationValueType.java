@@ -15,13 +15,20 @@ import com.planet.importexport.jobconfig.exception.InvalidJobConfigurationValueE
  * (case-insensitive), rejecting anything else — including numeric/truthy
  * surrogates such as {@code "1"} or {@code "yes"}, since ADR-0007 explicitly
  * cites inconsistent boolean-truthy handling across consumers as the risk a
- * declared type is meant to remove.
+ * declared type is meant to remove.</p>
  */
 public enum JobConfigurationValueType {
     /**
      * Accepts any non-{@code null} value unconditionally (ADR-0007).
      */
     STRING {
+        /**
+         * Accepts any non-{@code null} value unconditionally.
+         *
+         * @param value the raw, string-encoded value to check
+         *
+         * @return {@code true} unless {@code value} is {@code null}
+         */
         @Override
         public boolean isValid(String value) {
             return value != null;
@@ -32,6 +39,14 @@ public enum JobConfigurationValueType {
      * Requires the value to parse as a Java {@code int} (ADR-0007).
      */
     INTEGER {
+        /**
+         * Requires {@code value} to parse as a Java {@code int}.
+         *
+         * @param value the raw, string-encoded value to check
+         *
+         * @return {@code true} if {@code value} is non-{@code null} and
+         *         parses as an {@code int}
+         */
         @Override
         public boolean isValid(String value) {
             if (value == null) {
@@ -53,6 +68,16 @@ public enum JobConfigurationValueType {
      * {@code "1"} or {@code "yes"} (ADR-0007).
      */
     BOOLEAN {
+        /**
+         * Requires {@code value} to be {@code "true"} or {@code "false"}
+         * (case-insensitive), rejecting numeric/truthy surrogates such as
+         * {@code "1"} or {@code "yes"}.
+         *
+         * @param value the raw, string-encoded value to check
+         *
+         * @return {@code true} if {@code value} is exactly {@code "true"} or
+         *         {@code "false"}, ignoring case
+         */
         @Override
         public boolean isValid(String value) {
             return "true".equalsIgnoreCase(value)
@@ -65,6 +90,7 @@ public enum JobConfigurationValueType {
      * write-time check).
      *
      * @param value the raw, string-encoded value to check
+     *
      * @return {@code true} if {@code value} conforms to this type
      */
     public abstract boolean isValid(String value);
@@ -76,6 +102,7 @@ public enum JobConfigurationValueType {
      * @param key   the configuration key {@code value} belongs to, embedded in
      *              the exception message for diagnostics
      * @param value the raw, string-encoded value to validate
+     *
      * @throws InvalidJobConfigurationValueException if {@code value} does not
      * parse as this type
      */

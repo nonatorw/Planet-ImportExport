@@ -12,13 +12,13 @@ package com.planet.importexport.importjob;
  * <p>{@code PENDING} means the job record is persisted but the job has not yet
  * been dispatched, or is waiting on the ADR-0003 id-intersection serialization
  * gate. {@code RUNNING} means chunked row processing has started.
- * {@code COMPLETED}/{@code FAILED} are terminal.
+ * {@code COMPLETED}/{@code FAILED} are terminal.</p>
  *
  * <p>Transition enforcement lives here (not in the repository) so any future
  * caller of {@link #canTransitionTo(ImportJobStatus)} gets a single source of
  * truth for legal moves, per design.md section 3 step sequence. This class
  * does not decide *when* a transition happens (that is Group B's concern, e.g.
- * {@code B9}) — only which transitions are legal.
+ * {@code B9}) — only which transitions are legal.</p>
  */
 public enum ImportJobStatus {
     /**
@@ -52,6 +52,7 @@ public enum ImportJobStatus {
      * ({@code COMPLETED}, {@code FAILED}) allow no further transition.
      *
      * @param target the status being moved to.
+     *
      * @return {@code true} if this status may legally transition to
      *         {@code target}.
      */

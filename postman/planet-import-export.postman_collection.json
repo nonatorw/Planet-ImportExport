@@ -1,0 +1,504 @@
+{
+  "info": {
+    "name": "Planet Import/Export Service",
+    "description": "REST API for asynchronous CSV import and CSV/TXT/XLSX export of customer records, protected by OAuth2 Client Credentials (Keycloak). See README.md for the full functional overview. All /api/v1/** requests require a Bearer access token obtained via the \"Auth > Get Access Token\" request in this collection, which auto-populates the {{accessToken}} collection variable used by every other request's Authorization tab.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "authServerUrl",
+      "value": "",
+      "type": "string",
+      "description": "Base URL of the Keycloak realm, e.g. http://localhost:PORT/realms/quarkus. Quarkus Dev Services provisions Keycloak on a dynamically assigned port each run; copy the exact URL logged at application startup (search the quarkusDev console output for 'Keycloak Dev Services' or the OIDC auth-server-url) and set it in your environment. Not hardcoded here because the port is not stable across runs."
+    },
+    {
+      "key": "clientId",
+      "value": "quarkus-app",
+      "type": "string",
+      "description": "Dev Services default client id, preserved as-is by src/main/resources/quarkus-realm.json."
+    },
+    {
+      "key": "clientSecret",
+      "value": "secret",
+      "type": "string",
+      "description": "Dev Services default client secret, preserved as-is by src/main/resources/quarkus-realm.json. Never reuse this value outside dev/test; a real deployment must configure its own OIDC_CLIENT_SECRET (see application.yml %prod profile)."
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string",
+      "description": "Populated automatically by the Tests script on 'Auth > Get Access Token'."
+    },
+    {
+      "key": "jobId",
+      "value": "",
+      "type": "string",
+      "description": "Populated automatically by the Tests script on 'Import > Submit Import Job'."
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Get Access Token (Client Credentials)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('Response contains an access_token', function () {",
+                  "    pm.expect(body.access_token).to.be.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "if (body.access_token) {",
+                  "    pm.collectionVariables.set('accessToken', body.access_token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "client_credentials",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{clientId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{clientSecret}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{authServerUrl}}/protocol/openid-connect/token",
+              "host": [
+                "{{authServerUrl}}"
+              ],
+              "path": [
+                "protocol",
+                "openid-connect",
+                "token"
+              ]
+            },
+            "description": "Obtains an OAuth2 access token from Keycloak via the Client Credentials grant (ADR-0006). The Tests script above stores the returned access_token into the {{accessToken}} collection variable, which every /api/v1/** request below sends as a Bearer token. Run this request first, and again whenever the token expires."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Import",
+      "item": [
+        {
+          "name": "Submit Import Job",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 202', function () {",
+                  "    pm.response.to.have.status(202);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('Response contains a jobId', function () {",
+                  "    pm.expect(body.jobId).to.be.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "if (body.jobId) {",
+                  "    pm.collectionVariables.set('jobId', body.jobId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"filePath\": \"/data/imports/customers_01.csv\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/imports",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "imports"
+              ]
+            },
+            "description": "Submits a single CSV file (referenced by its filesystem path, already readable by the server) for asynchronous import. Returns 202 Accepted with only a jobId — no row-outcome summary or staging list (job-status spec: status information is available only via a subsequent query, not at submission). The Tests script stores jobId into {{jobId}} for use by 'Get Import Job Status' below."
+          }
+        },
+        {
+          "name": "Get Import Job Status",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/imports/{{jobId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "imports",
+                "{{jobId}}"
+              ]
+            },
+            "description": "Returns the job's status (PENDING/RUNNING/COMPLETED/FAILED), the numeric summary (totalRows/succeeded/failed), and the full list of staging entries (invalid/missing-value/unknown-column rows), each with jobId, rowId, rowData, errorDescription, and processedAt. Returns 404 if jobId does not exist."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Export",
+      "item": [
+        {
+          "name": "Export as CSV",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"format\": \"CSV\",\n  \"columns\": [\"id\", \"name\", \"email\", \"country\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/exports",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "exports"
+              ]
+            },
+            "description": "Exports the current version of every stored customer record with exactly the requested columns, in exactly the requested order. Supported formats: CSV, TXT, XLSX (legacy XLS is explicitly rejected). An unrecognized column name returns 400 naming the invalid column."
+          }
+        },
+        {
+          "name": "Export as TXT",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"format\": \"TXT\",\n  \"columns\": [\"name\", \"email\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/exports",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "exports"
+              ]
+            },
+            "description": "Same capability as 'Export as CSV', requesting the TXT format instead."
+          }
+        },
+        {
+          "name": "Export as XLSX",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"format\": \"XLSX\",\n  \"columns\": [\"id\", \"name\", \"country\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/exports",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "exports"
+              ]
+            },
+            "description": "Same capability as 'Export as CSV', requesting the XLSX (Office Open XML) format instead. The response body is a binary spreadsheet; in Postman, use 'Save Response > Save to a file' to inspect it."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Job Configuration",
+      "item": [
+        {
+          "name": "List All Configurations",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/job-configurations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-configurations"
+              ]
+            },
+            "description": "Lists every job configuration entry, including the chunkSize entry seeded at startup."
+          }
+        },
+        {
+          "name": "Get Configuration by Key",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/job-configurations/chunkSize",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-configurations",
+                "chunkSize"
+              ]
+            },
+            "description": "Retrieves a single configuration entry by key. Returns 404 if the key does not exist."
+          }
+        },
+        {
+          "name": "Create Configuration",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"key\": \"exampleFlag\",\n  \"value\": \"true\",\n  \"valueType\": \"BOOLEAN\",\n  \"description\": \"Example generic configuration entry, unrelated to chunkSize.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/job-configurations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-configurations"
+              ]
+            },
+            "description": "Creates a new, generic configuration entry (the CRUD API is not limited to chunkSize). valueType is one of STRING, INTEGER, BOOLEAN; value is validated against it at write time (ADR-0007). Returns 201 Created with a Location header."
+          }
+        },
+        {
+          "name": "Update Configuration",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"value\": \"500\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/job-configurations/chunkSize",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-configurations",
+                "chunkSize"
+              ]
+            },
+            "description": "Updates an existing configuration entry's value (and optionally valueType/description; omitted fields preserve their current values). Applies to subsequently started import jobs without requiring a redeploy. Returns 404 if the key does not exist, 400 if value is inconsistent with valueType."
+          }
+        },
+        {
+          "name": "Delete Configuration",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/job-configurations/exampleFlag",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-configurations",
+                "exampleFlag"
+              ]
+            },
+            "description": "Deletes a configuration entry by key. Returns 204 No Content on success, 404 if the key does not exist."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -22,7 +22,12 @@ public class InvalidJobConfigurationValueExceptionMapper
         implements ExceptionMapper<InvalidJobConfigurationValueException> {
 
     /**
+     * Maps an {@link InvalidJobConfigurationValueException} to a {@code 400
+     * Bad Request}, naming the offending key, declared value type, and
+     * rejected value.
+     *
      * @param exception the caught {@link InvalidJobConfigurationValueException}
+     *
      * @return a {@code 400 Bad Request} JSON response naming the offending
      *         key, declared value type, and rejected value
      */

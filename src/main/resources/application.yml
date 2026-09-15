@@ -3,10 +3,11 @@
 # the MongoDB and OIDC configuration below.
 
 # --- MongoDB (ADR-0001) ---------------------------------------------------
-# Storage is embedded in-memory MongoDB via Flapdoodle, not a containerized Dev Services instance.
-# Quarkus MongoDB Dev Services is disabled everywhere; the Flapdoodle-backed connection string is
-# supplied instead (at %dev/%test runtime via a startup hook / QuarkusTestResourceLifecycleManager,
-# both implementation detail for Group A1-A4, not this scaffolding group).
+# Storage is embedded in-memory MongoDB via Flapdoodle for automated tests, supplied via a
+# QuarkusTestResourceLifecycleManager that only runs under the test classpath (src/test/java) — it
+# does not exist when running `quarkusDev` for manual/demo use. MongoDB Dev Services is disabled by
+# default here and re-enabled only under %dev (below), so `quarkusDev` gets a real MongoDB container
+# via Testcontainers/Podman instead of failing to connect to a nonexistent embedded instance.
 quarkus:
   mongodb:
     devservices:
@@ -22,8 +23,32 @@ quarkus:
   oidc:
     tenant-enabled: true
 
+  # --- OpenAPI security scheme (ADR-0006) -----------------------------------
+  # With quarkus-oidc active, quarkus-smallrye-openapi auto-generates its own "SecurityScheme" entry
+  # (type openIdConnect, pointing at the realm's discovery document) and auto-attaches it to every
+  # operation, overriding the explicit "bearerAuth" HTTP-bearer/JWT scheme declared by the
+  # package-level @OpenAPIDefinition in com.planet.importexport's package-info.java — confirmed
+  # empirically via `curl /q/openapi`: paths kept
+  # referencing "bearerAuth" in their `security` array, but `components.securitySchemes` only listed
+  # the auto-generated "SecurityScheme", leaving a dangling reference and no working "Authorize"
+  # button in /q/swagger-ui. Both auto-behaviors are disabled here so the explicit "bearerAuth" scheme
+  # (simpler for manual Swagger UI testing: paste the access_token, no discovery round-trip) is the
+  # only one exposed.
+  smallrye-openapi:
+    auto-add-security: false
+    auto-add-security-requirement: false
+
 "%dev":
   quarkus:
+    mongodb:
+      devservices:
+        # Manual/demo use (`quarkusDev`) has no test classpath, so the Flapdoodle embedded Mongo
+        # used by automated tests (src/test/java) is unavailable here. Enable real MongoDB Dev
+        # Services instead: Quarkus provisions a MongoDB container via Testcontainers/Podman and
+        # wires the connection string automatically, mirroring how Keycloak Dev Services already
+        # works below. Data does not persist across `quarkusDev` restarts (a fresh container each
+        # run), consistent with this being a demo/dev-only fallback, not a production datastore.
+        enabled: true
     keycloak:
       devservices:
         enabled: true
@@ -50,6 +75,16 @@ quarkus:
         # (confirmed empirically: Keycloak refused to start with a mismatched file name, logging
         # "File name / realm name mismatch... File name should be quarkus-realm.json").
         realm-path: quarkus-realm.json
+        # Fixed (not random) host port for `quarkusDev`/manual/demo use: the container's internal
+        # 8080 is always published as host port 8543. Without this, Testcontainers picks a random
+        # free host port on every `quarkusDev` start, which breaks the devcontainer's static
+        # `forwardPorts` list (only fixed ports can be pre-declared there) and forces re-discovering
+        # and re-forwarding a new port by hand every single run — exactly the friction that broke a
+        # live demo. `%test` intentionally keeps the random port: automated tests read the effective
+        # `quarkus.oidc.auth-server-url` via `@ConfigProperty` at runtime (see AuthenticationIT),
+        # so they never need a human to know the port number, and a fixed port would only risk
+        # collisions between concurrent test runs.
+        port: 8543
 
 "%test":
   quarkus:

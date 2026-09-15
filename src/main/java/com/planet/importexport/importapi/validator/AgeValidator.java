@@ -31,6 +31,7 @@ public final class AgeValidator {
      *
      * @param age the raw string value from the source row; may be
      *            {@code null}
+     *
      * @return {@code true} if {@code age} parses as an integer in
      *         {@code [0, 120]}, {@code false} otherwise (including
      *         {@code null} or non-numeric input)

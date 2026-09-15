@@ -6,15 +6,15 @@ import com.planet.importexport.authapi.support.BearerTokenTestSupport;
 import com.planet.importexport.authapi.support.KeycloakTokenClient;
 import com.planet.importexport.mongo.FlapdoodleMongoTestResource;
 
+import org.assertj.core.api.Assertions;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.RestAssured;
 import io.restassured.response.Response;
-
-import static io.restassured.RestAssured.given;
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Integration coverage for Group E (Authentication capability; ADR-0006;
@@ -68,22 +68,24 @@ class AuthenticationIT {
 
     @Test
     void protectedEndpoint_withoutBearerToken_returns401() {
-        given().when()
-               .get(URI_PROTECTED_ENDPOINT)
-               .then()
-               .statusCode(401);
+        RestAssured.given()
+                   .when()
+                   .get(URI_PROTECTED_ENDPOINT)
+                   .then()
+                   .statusCode(401);
     }
 
     @Test
     void protectedEndpoint_withValidBearerToken_isAuthorizedAndProcessed() {
         String accessToken = bearerTokenTestSupport.obtainAccessToken();
 
-        given().auth()
-               .oauth2(accessToken)
-               .when()
-               .get(URI_PROTECTED_ENDPOINT)
-               .then()
-               .statusCode(200);
+        RestAssured.given()
+                   .auth()
+                   .oauth2(accessToken)
+                   .when()
+                   .get(URI_PROTECTED_ENDPOINT)
+                   .then()
+                   .statusCode(200);
     }
 
     @Test
@@ -95,8 +97,10 @@ class AuthenticationIT {
 
         response.then()
                 .statusCode(200)
-                .body(ACCESS_TOKEN, org.hamcrest.Matchers.notNullValue())
-                .body(TOKEN_TYPE, org.hamcrest.Matchers.equalToIgnoringCase("bearer"));
+                .body(ACCESS_TOKEN,
+                      Matchers.notNullValue())
+                .body(TOKEN_TYPE,
+                      Matchers.equalToIgnoringCase("bearer"));
     }
 
     /**
@@ -110,7 +114,7 @@ class AuthenticationIT {
      * default realm/client only assigns {@code ["microprofile-jwt", "basic"]}
      * as default client scopes, which does not include {@code offline_access}
      * — so Keycloak did not mint a {@code refresh_token} for this grant out of
-     * the box.
+     * the box.</p>
      *
      * <p><b>Fix applied, per ADR-0006's explicit instruction</b> ("if Dev
      * Services' default realm configuration does not issue refresh tokens for
@@ -131,7 +135,7 @@ class AuthenticationIT {
      * client scopes so the issued refresh token is a long-lived offline
      * token. That combination causes Keycloak to include a
      * {@code refresh_token} field in the {@code client_credentials} token
-     * response, confirmed empirically by the assertion below.
+     * response, confirmed empirically by the assertion below.</p>
      */
     @Test
     void tokenResponse_refreshTokenFieldPresent() {
@@ -140,18 +144,22 @@ class AuthenticationIT {
                                                  BearerTokenTestSupport.DEV_SERVICES_CLIENT_ID,
                                                  BearerTokenTestSupport.DEV_SERVICES_CLIENT_SECRET);
 
-        response.then().statusCode(200);
+        response.then()
+                .statusCode(200);
 
         boolean refreshTokenPresent =
                 response.jsonPath().get("refresh_token") != null;
 
-        // Confirmed empirically: with the custom Dev Services realm-export
-        // (src/main/resources/quarkus-realm.json) adding "offline_access" as
-        // a DEFAULT client scope and the "client_credentials.use_refresh_token"
-        // client attribute on "quarkus-app", Keycloak now issues a
-        // refresh_token for the client_credentials grant, per ADR-0006's
-        // explicit "More Information" instruction to fix this via realm/client
-        // configuration rather than merely document its absence.
-        assertThat(refreshTokenPresent).isTrue();
+        /*
+         * Confirmed empirically: with the custom Dev Services realm-export
+         * (src/main/resources/quarkus-realm.json) adding "offline_access" as
+         * a DEFAULT client scope and the "client_credentials.use_refresh_token"
+         * client attribute on "quarkus-app", Keycloak now issues a
+         * refresh_token for the client_credentials grant, per ADR-0006's
+         * explicit "More Information" instruction to fix this via realm/client
+         * configuration rather than merely document its absence.
+         */
+        Assertions.assertThat(refreshTokenPresent)
+                  .isTrue();
     }
 }

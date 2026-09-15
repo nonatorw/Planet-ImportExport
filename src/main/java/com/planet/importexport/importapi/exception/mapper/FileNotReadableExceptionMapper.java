@@ -17,7 +17,10 @@ public class FileNotReadableExceptionMapper
         implements ExceptionMapper<FileNotReadableException> {
 
     /**
+     * Converts the caught exception into a client-facing error response.
+     *
      * @param exception the caught {@link FileNotReadableException}
+     *
      * @return a {@code 400 Bad Request} JSON response carrying the
      *         exception's own message under an {@code "error"} key
      */

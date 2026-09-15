@@ -7,11 +7,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit tests for {@link JobIntersectionGate} (ADR-0003; {@code B2}):
@@ -33,6 +34,10 @@ class JobIntersectionGateTest {
         executor.shutdownNow();
     }
 
+    /**
+     * Two jobs whose id sets are disjoint both clear the gate immediately,
+     * without either one blocking on the other.
+     */
     @Test
     void disjointJobsBothProceedWithoutWaiting() throws InterruptedException {
         JobIntersectionGate gate = new JobIntersectionGate();
@@ -44,9 +49,15 @@ class JobIntersectionGateTest {
         gate.awaitTurn("job-a");
         gate.awaitTurn("job-b");
 
-        assertThat(gate.registeredCount()).isEqualTo(2);
+        Assertions.assertThat(gate.registeredCount())
+                  .isEqualTo(2);
     }
 
+    /**
+     * A second job that intersects an already-arrived job's id set blocks in
+     * {@code awaitTurn} until the first job calls {@code release}, at which
+     * point it proceeds.
+     */
     @Test
     @Timeout(10)
     void intersectingSecondArrivalWaitsUntilFirstReleases()
@@ -73,31 +84,41 @@ class JobIntersectionGateTest {
             }
         });
 
-        assertThat(jobBStarted.await(5, TimeUnit.SECONDS)).isTrue();
+        Assertions.assertThat(jobBStarted.await(5, TimeUnit.SECONDS))
+                  .isTrue();
 
         // Give job-b's awaitTurn a moment to actually block on the condition
         // before releasing job-a.
         Thread.sleep(200);
-        assertThat(executionOrder).containsExactly("job-a-started");
+
+        Assertions.assertThat(executionOrder)
+                  .containsExactly("job-a-started");
 
         gate.release("job-a");
 
         waitUntil(() -> executionOrder.contains("job-b-started"),
                   5000);
 
-        assertThat(executionOrder)
-                .containsExactly("job-a-started", "job-b-started");
+        Assertions.assertThat(executionOrder)
+                  .containsExactly("job-a-started", "job-b-started");
     }
 
+    /**
+     * Among three jobs that all share the same id, the gate releases them
+     * strictly in their arrival order (A, then B, then C), even when the
+     * executor happens to schedule the later jobs' worker threads first.
+     */
     @Test
     @Timeout(10)
     void arrivalOrderIsPreservedAmongIntersectingJobsEvenIfLaterJobsWorkerRunsFirst()
             throws Exception {
         JobIntersectionGate gate = new JobIntersectionGate();
 
-        // Arrival order: A, B, C — all share id "1", so they must clear the
-        // gate strictly in that order even if the executor happens to schedule
-        // C's or B's worker thread before A's.
+        /*
+         * Arrival order: A, B, C — all share id "1", so they must clear the
+         * gate strictly in that order even if the executor happens to schedule
+         * C's or B's worker thread before A's.
+         */
         gate.arrive("job-a", Set.of("1"));
         gate.arrive("job-b", Set.of("1"));
         gate.arrive("job-c", Set.of("1"));
@@ -108,9 +129,11 @@ class JobIntersectionGateTest {
         CountDownLatch allSubmitted =
                 new CountDownLatch(3);
 
-        // Submit C and B's waiters first (reverse of arrival order) to prove
-        // the *arrival queue* position — not submission/scheduling order —
-        // governs release order.
+        /*
+         * Submit C and B's waiters first (reverse of arrival order) to prove
+         * the *arrival queue* position — not submission/scheduling order —
+         * governs release order.
+         */
         executor.submit(() -> waitAndRecord(gate,
                                             "job-c",
                                             clearedOrder,
@@ -126,16 +149,19 @@ class JobIntersectionGateTest {
                                             clearedOrder,
                                             allSubmitted));
 
-        assertThat(allSubmitted.await(5, TimeUnit.SECONDS)).isTrue();
+        Assertions.assertThat(allSubmitted.await(5, TimeUnit.SECONDS))
+                  .isTrue();
 
-        // job-a has nothing ahead of it, so it should clear almost
-        // immediately; b and c must wait.
+        /*
+         * job-a has nothing ahead of it, so it should clear almost
+         * immediately; b and c must wait.
+         */
         waitUntil(() -> clearedOrder.contains("job-a"),
                   5000);
         Thread.sleep(200);
 
-        assertThat(clearedOrder)
-                .containsExactly("job-a");
+        Assertions.assertThat(clearedOrder)
+                  .containsExactly("job-a");
 
         gate.release("job-a");
 
@@ -143,29 +169,43 @@ class JobIntersectionGateTest {
                   5000);
         Thread.sleep(200);
 
-        assertThat(clearedOrder)
-                .containsExactly("job-a", "job-b");
+        Assertions.assertThat(clearedOrder)
+                  .containsExactly("job-a", "job-b");
 
         gate.release("job-b");
 
         waitUntil(() -> clearedOrder.contains("job-c"),
                   5000);
 
-        assertThat(clearedOrder)
-                .containsExactly("job-a", "job-b", "job-c");
+        Assertions.assertThat(clearedOrder)
+                  .containsExactly("job-a", "job-b", "job-c");
 
         gate.release("job-c");
     }
 
+    /**
+     * Calling {@code awaitTurn} for a job id that never called {@code arrive}
+     * throws {@link IllegalStateException}.
+     */
     @Test
     void awaitTurnThrowsIfJobNeverArrived() {
         JobIntersectionGate gate = new JobIntersectionGate();
 
-        org.junit.jupiter.api.Assertions.assertThrows(
-                IllegalStateException.class,
-                () -> gate.awaitTurn("never-arrived"));
+        assertThrows(IllegalStateException.class,
+                     () -> gate.awaitTurn("never-arrived"));
     }
 
+    /**
+     * Signals arrival via {@code latch}, then blocks on
+     * {@code gate.awaitTurn(jobId)} and appends {@code jobId} to
+     * {@code order} once its turn arrives.
+     *
+     * @param gate  the gate to wait on
+     * @param jobId the job id waiting for its turn
+     * @param order the shared list recording the order jobs are released in
+     * @param latch counted down as soon as this thread starts waiting, so
+     *              the test can observe arrival before release
+     */
     private void waitAndRecord(JobIntersectionGate gate,
                                String jobId,
                                CopyOnWriteArrayList<String> order,

@@ -18,7 +18,9 @@ import java.util.Map;
  *                           ({@code B5.1}); a column entirely absent from the
  *                           header never appears as a key here
  */
-public record CsvRow(int rowId, Map<String, String> valuesByColumnName) {
+public record CsvRow(
+    int rowId,
+    Map<String, String> valuesByColumnName) {
 
     /**
      * Defensively copies {@code valuesByColumnName} into a new,

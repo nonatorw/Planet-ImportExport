@@ -19,20 +19,27 @@ import java.util.List;
  * conventional plain-text tabular choice distinct from CSV's comma, keeping
  * the two formats visibly different as the spec's scenarios expect.
  * A header row (the requested column names) is written first so the output
- * is self-describing.
+ * is self-describing.</p>
  */
 public final class DelimitedTextExportWriter {
 
-    /** Not instantiable: all behavior is exposed through the static write methods. */
+    /**
+     * Not instantiable: all behavior is exposed through the static write
+     * methods.
+     */
     private DelimitedTextExportWriter() {
         // Utility class.
     }
 
     /**
+     * Writes {@code columns} and {@code rows} as comma-delimited, RFC
+     * 4180-quoted CSV content.
+     *
      * @param columns the requested column names, used as the header row and
      *                to determine the number of cells per row
      * @param rows    the data rows to write, each already ordered to match
      *                {@code columns}
+     *
      * @return the UTF-8 encoded CSV content, header row first
      */
     public static byte[] writeCsv(List<String> columns,
@@ -44,10 +51,14 @@ public final class DelimitedTextExportWriter {
     }
 
     /**
+     * Writes {@code columns} and {@code rows} as tab-separated, unquoted TXT
+     * content.
+     *
      * @param columns the requested column names, used as the header row and
      *                to determine the number of cells per row
      * @param rows    the data rows to write, each already ordered to match
      *                {@code columns}
+     *
      * @return the UTF-8 encoded tab-separated content, header row first
      */
     public static byte[] writeTxt(List<String> columns, List<List<String>> rows) {
@@ -57,6 +68,20 @@ public final class DelimitedTextExportWriter {
                      false);
     }
 
+    /**
+     * Writes {@code columns} as the header row followed by every row in
+     * {@code rows}, using {@code delimiter} to separate cells.
+     *
+     * @param columns       the header row cell values
+     * @param rows          the data rows to write, each already ordered to
+     *                      match {@code columns}
+     * @param delimiter     the character separating cells on each line
+     * @param quoteIfNeeded whether a cell value should be RFC 4180-style
+     *                      quoted when it contains {@code delimiter}, a quote
+     *                      character, or a newline
+     *
+     * @return the UTF-8 encoded delimited content, header row first
+     */
     private static byte[] write(List<String> columns,
                                 List<List<String>> rows,
                                 char delimiter,
@@ -88,6 +113,19 @@ public final class DelimitedTextExportWriter {
         return buffer.toByteArray();
     }
 
+    /**
+     * Writes a single line to {@code writer}: {@code values} joined by
+     * {@code delimiter} (quoting each cell first when {@code quoteIfNeeded}
+     * is {@code true}), terminated by a CRLF line ending.
+     *
+     * @param writer        the target to append the line to
+     * @param values        the cell values for this line, in order; a
+     *                      {@code null} value is written as an empty cell
+     * @param delimiter     the character separating cells on the line
+     * @param quoteIfNeeded whether each cell should be passed through
+     *                      {@link #quoteIfNecessary(String, char)} before
+     *                      being written
+     */
     private static void writeRow(PrintWriter writer,
                                  List<String> values,
                                  char delimiter,
@@ -108,6 +146,18 @@ public final class DelimitedTextExportWriter {
         writer.print("\r\n");
     }
 
+    /**
+     * RFC 4180-style quotes {@code value} when it contains {@code delimiter},
+     * a double-quote character, or a newline; any embedded double quote is
+     * doubled up as required by that quoting rule.
+     *
+     * @param value     the raw cell value to inspect and, if needed, quote
+     * @param delimiter the character separating cells on the line, checked
+     *                  as one of the triggers for quoting
+     *
+     * @return {@code value} unchanged when quoting is not needed, otherwise
+     *         the quoted and escaped form
+     */
     private static String quoteIfNecessary(String value,
                                            char delimiter) {
         boolean needsQuoting = value.indexOf(delimiter) >= 0 ||

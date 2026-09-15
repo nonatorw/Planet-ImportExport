@@ -3,20 +3,25 @@ package com.planet.importexport.staging;
 import java.time.Instant;
 import java.util.Map;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Pure unit test for the {@link StagingEntry} document shape — no Quarkus
- * container needed. Fixes the exact field set required by ADR-0005 and
- * design.md section 1.2: {@code jobId}, {@code rowId}, {@code rowData},
- * {@code errorDescription}, {@code processedAt}.
+ * container needed.
+ *
+ * Fixes the exact field set required by ADR-0005 and design.md section 1.2:
+ * {@code jobId}, {@code rowId}, {@code rowData}, {@code errorDescription},
+ * {@code processedAt}.
  */
 class StagingEntryTest {
 
+    /**
+     * A {@link StagingEntry} holds and returns exactly the values assigned
+     * to its {@code jobId}, {@code rowId}, {@code rowData},
+     * {@code errorDescription}, and {@code processedAt} fields, while its
+     * {@code id} stays {@code null} until persisted.
+     */
     @Test
     void holdsAllFieldsRequiredByAdr0005() {
         StagingEntry entry = new StagingEntry();
@@ -33,21 +38,33 @@ class StagingEntryTest {
         entry.processedAt =
                 Instant.parse("2026-09-14T10:00:03Z");
 
-        assertEquals("job-abc123", entry.jobId);
-        assertEquals(5, entry.rowId);
-        assertEquals("thirty", entry.rowData.get("age"));
-        assertTrue(entry.errorDescription.contains("age"));
+        Assertions.assertEquals("job-abc123",
+                                entry.jobId);
 
-        assertEquals(Instant.parse("2026-09-14T10:00:03Z"),
-                     entry.processedAt);
+        Assertions.assertEquals(5,
+                                entry.rowId);
 
-        assertNull(entry.id);
+        Assertions.assertEquals("thirty",
+                                entry.rowData.get("age"));
+
+        Assertions.assertTrue(entry.errorDescription.contains("age"));
+
+        Assertions.assertEquals(Instant.parse("2026-09-14T10:00:03Z"),
+                                entry.processedAt);
+
+        Assertions.assertNull(entry.id);
     }
 
+    /**
+     * A column outside the recognized schema is preserved verbatim in
+     * {@code rowData} rather than being dropped from the staged entry.
+     */
     @Test
     void rowDataPreservesUnknownColumnsVerbatim() {
-        // ADR-0005 / design.md 1.2: unknown-column rows are staged with their
-        // full raw row, including the column outside the recognized schema.
+        /*
+         * ADR-0005 / design.md 1.2: unknown-column rows are staged with their
+         * full raw row, including the column outside the recognized schema.
+         */
         StagingEntry entry = new StagingEntry();
         entry.jobId = "job-xyz789";
         entry.rowId = 2;
@@ -60,16 +77,23 @@ class StagingEntryTest {
 
         entry.processedAt = Instant.now();
 
-        assertEquals("gold", entry.rowData.get("loyalty_tier"));
+        Assertions.assertEquals("gold",
+                                entry.rowData.get("loyalty_tier"));
 
-        assertTrue(entry.errorDescription.contains("loyalty_tier"));
+        Assertions.assertTrue(entry.errorDescription.contains("loyalty_tier"));
     }
 
+    /**
+     * {@code rowId} reflects the row's file position and stays set even
+     * when the row's own parsed {@code id} value is missing or blank.
+     */
     @Test
     void rowIdIsFilePositionNotParsedIdField() {
-        // ADR-0005 Consequences: rowId must remain identifiable even when the
-        // row's own "id" content is missing or malformed, so it is defined as
-        // file position, not parsed content.
+        /*
+         * ADR-0005 Consequences: rowId must remain identifiable even when the
+         * row's own "id" content is missing or malformed, so it is defined as
+         * file position, not parsed content.
+         */
         StagingEntry entry = new StagingEntry();
         entry.jobId = "job-abc123";
         entry.rowId = 3;
@@ -80,7 +104,10 @@ class StagingEntryTest {
 
         entry.processedAt = Instant.now();
 
-        assertEquals(3, entry.rowId);
-        assertEquals("", entry.rowData.get("id"));
+        Assertions.assertEquals(3,
+                                entry.rowId);
+
+        Assertions.assertEquals("",
+                                entry.rowData.get("id"));
     }
 }

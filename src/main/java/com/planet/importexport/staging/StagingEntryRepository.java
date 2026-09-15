@@ -13,11 +13,13 @@ import com.mongodb.client.model.Indexes;
 
 /**
  * Repository for the single generic {@code staging_entries} collection
- * (ADR-0005). Exposes insertion and a fetch-all-by-job query; the latter is
- * what the job-status endpoint
- * ({@code GET /api/v1/imports/{jobId}}, Group B/{@code B10}) will use to
- * return every staging error recorded for a job — that endpoint is out of this
- * task's scope and is only a downstream consumer of this repository.
+ * (ADR-0005).
+ *
+ * <p>Exposes insertion and a fetch-all-by-job query; the latter is what the
+ * job-status endpoint ({@code GET /api/v1/imports/{jobId}}, Group B/{@code B10})
+ * will use to return every staging error recorded for a job — that endpoint is
+ * out of this task's scope and is only a downstream consumer of this repository.
+ * </p>
  */
 @ApplicationScoped
 public class StagingEntryRepository
@@ -31,8 +33,9 @@ public class StagingEntryRepository
      * creating an index that already exists with the same keys/options.
      */
     void ensureIndexes(@Observes StartupEvent event) {
-        mongoCollection().createIndex(Indexes.ascending("jobId"),
-                                      new IndexOptions().background(true));
+        mongoCollection().createIndex(
+            Indexes.ascending("jobId"),
+            new IndexOptions().background(true));
     }
 
     /**

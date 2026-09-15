@@ -13,7 +13,7 @@ import java.util.Map;
  * <p>Modeled as a sealed result rather than throwing, per {@code
  * @143-java-functional-exception-handling}: a row failing validation is an
  * expected outcome of import processing, not a programming error or
- * infrastructure fault.
+ * infrastructure fault.</p>
  */
 public sealed interface RowOutcome {
     /**
@@ -23,7 +23,8 @@ public sealed interface RowOutcome {
      * @param recordId         the row's {@code id} column value
      * @param recognizedFields only {@link RecognizedImportField} keys other
      *                         than {@code id} that were present (non-blank)
-     *                         in this row; ready to pass directly to {@link
+     *                         in this row; ready to pass directly to
+     * {@link
      *     com.planet.importexport.customerrecord.CustomerRecordRepository#insertNextVersion}
      */
     record Success(String recordId,
@@ -36,5 +37,6 @@ public sealed interface RowOutcome {
      * @param errorDescription free text distinguishing
      *                         missing/invalid/unknown-column (ADR-0005)
      */
-    record Failure(String errorDescription) implements RowOutcome {}
+    record Failure(String errorDescription)
+            implements RowOutcome {}
 }

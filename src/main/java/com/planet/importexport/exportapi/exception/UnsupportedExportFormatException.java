@@ -8,14 +8,16 @@ package com.planet.importexport.exportapi.exception;
  *
  * <p>This is an application-level (unchecked) validation failure, not an
  * infrastructure error;
- * {@code com.planet.importexport.exportapi.exception.mapper.ExportExceptionMapper}
- * translates it into an HTTP 400 response.
+ * {@link com.planet.importexport.exportapi.exception.mapper.UnsupportedFormatMapper}
+ * translates it into an HTTP 400 response.</p>
  */
 public class UnsupportedExportFormatException extends RuntimeException {
 
     private final String requestedFormat;
 
     /**
+     * Creates a new exception for an unsupported requested export format.
+     *
      * @param requestedFormat the raw, caller-supplied format value that is
      *                        blank, unrecognized, or names the legacy XLS
      *                        format
@@ -26,6 +28,9 @@ public class UnsupportedExportFormatException extends RuntimeException {
     }
 
     /**
+     * Returns the raw, caller-supplied format value that triggered this
+     * exception.
+     *
      * @return the raw, caller-supplied format value that triggered this
      *         exception
      */

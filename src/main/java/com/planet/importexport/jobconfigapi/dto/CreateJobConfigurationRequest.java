@@ -27,7 +27,12 @@ import com.planet.importexport.jobconfig.JobConfigurationValueType;
  *                    must not be {@code null}
  * @param description an optional human-readable description of the entry
  */
-public record CreateJobConfigurationRequest(@NotBlank String key,
-                                            @NotNull String value,
-                                            @NotNull JobConfigurationValueType valueType,
-                                            String description) {}
+public record CreateJobConfigurationRequest(
+    @NotBlank
+    String key,
+    @NotNull
+    String value,
+    @NotNull
+    JobConfigurationValueType valueType,
+    String description) {
+    }
