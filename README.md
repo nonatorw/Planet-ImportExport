@@ -260,6 +260,14 @@ All `/api/v1/**` endpoints require a valid OAuth2 access token (Client Credentia
 
 **Working inside this devcontainer:** if you access the application from a browser on the host machine (not from a terminal already inside the container), port `8543` needs to be reachable from outside the container too. It is already declared in `.devcontainer/devcontainer.json`'s `forwardPorts`, so VS Code should forward it automatically the first time Keycloak starts; if it does not, forward it by hand once from the **Ports** panel (`Forward a Port` → `8543`) — this is a one-time step per devcontainer session, not a per-run one, since the port itself no longer changes.
 
+## Next Steps
+
+The following capabilities are not part of the current implementation but are natural extensions of it:
+
+- **List/query import jobs**: a `GET /api/v1/imports` endpoint returning jobs filtered by status (`PENDING`/`RUNNING`/`COMPLETED`/`FAILED`), by `jobId`, or by processing date range. Today a job's status/summary is only retrievable one at a time via `GET /api/v1/imports/{jobId}` (see [Query import job status](#query-import-job-status)); there is no way to list or search across jobs.
+- **Query staging entries independently of a job**: `GET /api/v1/staging`-style endpoints returning rejected rows filtered by `jobId`, or by processing date range, without going through a specific job's status response. Today staging entries are only reachable embedded in a `GET /api/v1/imports/{jobId}` response (the `stagingErrors` field) — there is no standalone way to query the `staging_entries` collection by other criteria.
+- **Versioning for the imported document schema itself**: an explicit mechanism for evolving the set of recognized fields (currently `id`, `name`, `email`, `age`, `country`, `phone`, fixed in `RecognizedField`) over time — e.g. adding/deprecating fields without breaking already-stored `customer_records` versions or in-flight imports. This is distinct from the existing **record**-versioning policy (ADR-0004, one version per repeated `id`), which versions data, not the schema shape.
+
 ## Related Guides
 
 - REST ([guide](https://quarkus.io/guides/rest)): Build RESTful web services and APIs using Jakarta REST (formerly JAX-RS)
